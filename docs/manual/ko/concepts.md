@@ -91,7 +91,7 @@ sequenceDiagram
     App->>SDK: evaluate(기록, now)
     SDK-->>App: VALID, 기능 목록, 한도
     App->>App: gate.refresh(판정)
-    App-->>Op: 라이선스 적용 — 기능이 열린다
+    App-->>Op: 라이선스 적용 — 기능이 열립니다
 ```
 
 여기서 짚어둘 곳이 두 군데입니다.
@@ -118,11 +118,11 @@ sequenceDiagram
     App->>SDK: activationRequest(제품 키, 지문, 릴리스)
     SDK-->>App: { body, nonce }
     App-->>Op: request.json  (논스는 배포물에 남음)
-    Note over Op: 파일을 들고 나간다 —<br/>USB, 이메일, 티켓
+    Note over Op: 파일을 들고 나갑니다.<br/>USB, 이메일, 티켓
 
     Op->>Portal: request.json 업로드
     Portal-->>Op: response.json  (서명된 토큰)
-    Note over Op: 다시 들고 들어온다
+    Note over Op: 다시 들고 들어옵니다
 
     Op->>App: response.json 업로드
     App->>SDK: activationResponse(응답, nonce, 지문)
@@ -311,13 +311,13 @@ matched ≥ 1 이고 matched ≥ ceil(|수집됨| / 2) 이면 통과
 
 ```mermaid
 flowchart LR
-    A[페이로드에서<br/>alg와 kid를 읽는다] --> B{alg가 이 배포물의<br/>허용 목록에 있는가?}
-    B -->|없다| X[INVALID_SIGNATURE]
-    B -->|있다| C{kid가 가리키는<br/>키가 있는가?}
-    C -->|없다| X
-    C -->|있다| D{그 키의 알고리즘이<br/>선언된 것과 같은가?}
-    D -->|다르다| X
-    D -->|같다| E[서명 검증]
+    A[페이로드에서<br/>alg와 kid를 읽습니다] --> B{alg가 이 배포물의<br/>허용 목록에 있는가?}
+    B -->|없음| X[INVALID_SIGNATURE]
+    B -->|있음| C{kid가 가리키는<br/>키가 있는가?}
+    C -->|없음| X
+    C -->|있음| D{그 키의 알고리즘이<br/>선언된 것과 같은가?}
+    D -->|다름| X
+    D -->|같음| E[서명 검증]
     E -->|실패| X
     E -->|통과| OK[다음 검사로]
 ```

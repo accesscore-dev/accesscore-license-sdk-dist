@@ -16,7 +16,7 @@ sequenceDiagram
 
     App->>Gate: requireFeature("ATTENDANCE")
     Gate-->>App: 거절 { errorCode, messageKey, arguments, httpStatus }
-    Note over App: SDK는 여기까지다 —<br/>문장을 만들지 않는다
+    Note over App: SDK는 여기까지입니다.<br/>문장을 만들지 않습니다
     App->>I18n: lookup(messageKey, arguments, locale)
     I18n-->>App: "이 배포에는 ATTENDANCE 모듈이 포함되어 있지 않습니다."
     App-->>User: 403 + 완성된 메시지

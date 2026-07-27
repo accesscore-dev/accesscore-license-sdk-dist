@@ -74,8 +74,8 @@
   <circle cx="1018" cy="261" r="34" fill="#ECEBFB"/>
   <use href="#ic-shield" x="998" y="241" width="40" height="40" style="color:#534AB7"/>
   <text class="ct" x="1064" y="239" fill="#3C3489" dominant-baseline="central">서명 키</text>
-  <text class="cb" x="1064" y="265" dominant-baseline="central">Ed25519 개인키 —</text>
-  <text class="cb" x="1064" y="287" dominant-baseline="central">이 경계를 넘지 않음</text>
+  <text class="cb" x="1064" y="265" dominant-baseline="central">Ed25519 개인키는</text>
+  <text class="cb" x="1064" y="287" dominant-baseline="central">이 경계를 넘지 않습니다</text>
 
   <!-- the token travels -->
   <path d="M700 360 L700 424" stroke="#1F6FB2" stroke-width="3" fill="none" marker-end="url(#ah)"/>
@@ -97,18 +97,18 @@
   <use href="#ic-server" x="126" y="529" width="40" height="40" style="color:#0F7A5F"/>
   <text class="ct" x="192" y="525" fill="#085041" dominant-baseline="central">애플리케이션</text>
   <text class="cb" x="192" y="551" dominant-baseline="central">규칙이 성립해야 하는 자리에서</text>
-  <text class="cb" x="192" y="573" dominant-baseline="central">게이트를 호출</text>
+  <text class="cb" x="192" y="573" dominant-baseline="central">게이트를 호출합니다</text>
 
   <circle cx="582" cy="549" r="34" fill="#E7F5EF"/>
   <use href="#ic-shield" x="562" y="529" width="40" height="40" style="color:#0F7A5F"/>
   <text class="ct" x="628" y="525" fill="#085041" dominant-baseline="central">게이트</text>
   <text class="cb" x="628" y="551" dominant-baseline="central">state · requireFeature ·</text>
-  <text class="cb" x="628" y="573" dominant-baseline="central">checkQuota — 캐시를 읽음</text>
+  <text class="cb" x="628" y="573" dominant-baseline="central">checkQuota — 캐시를 읽습니다</text>
 
   <circle cx="1018" cy="549" r="34" fill="#E7F5EF"/>
   <use href="#ic-gear" x="998" y="529" width="40" height="40" style="color:#0F7A5F"/>
   <text class="ct" x="1064" y="525" fill="#085041" dominant-baseline="central">코어</text>
-  <text class="cb" x="1064" y="551" dominant-baseline="central">서명을 검증하고 판정</text>
+  <text class="cb" x="1064" y="551" dominant-baseline="central">서명을 검증하고 판정합니다</text>
   <text class="cb" x="1064" y="573" dominant-baseline="central">— 15개 검사, 하나의 순서</text>
 
   <path d="M466 549 L514 549" stroke="#0F7A5F" stroke-width="3" fill="none" marker-end="url(#ah2)"/>

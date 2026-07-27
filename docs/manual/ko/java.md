@@ -15,15 +15,15 @@ sequenceDiagram
     Note over Boot: ① 기동 시
     Boot->>Mgr: builder(store, identity, keys).build()
     Mgr->>Store: load()
-    alt 등록된 것이 있다
+    alt 등록된 것이 있을 때
         Store-->>Mgr: 저장된 기록
         Mgr->>Mgr: verify(now, integrity)
         Mgr->>Gate: refresh(판정)
-        Note over Gate: 기능과 한도가 살아난다
-    else 아직 없다
+        Note over Gate: 기능과 한도가 살아납니다
+    else 아직 없을 때
         Store-->>Mgr: 비어 있음
         Mgr->>Gate: refresh(NOT_ACTIVATED)
-        Note over Gate: 운영자가 활성화할 때까지<br/>게이트를 지나는 호출은 모두 거절된다
+        Note over Gate: 운영자가 활성화할 때까지<br/>게이트를 지나는 호출은 모두 거절됩니다
     end
 ```
 
@@ -178,8 +178,8 @@ manager.checkQuota(PacsQuotas.USERS);
 ```mermaid
 flowchart LR
     R[HTTP 요청] --> F[LicenseEnforcementFilter<br/>이 배포물에 라이선스가 있는가?]
-    F -->|없고, 막힌 경로다| X403[403 + 번역된 메시지]
-    F -->|있거나, 열린 경로다| A["컨트롤러의 @RequiresFeature<br/>이 모듈이 허용되는가?"]
+    F -->|없고, 막힌 경로| X403[403 + 번역된 메시지]
+    F -->|있거나, 열린 경로| A["컨트롤러의 @RequiresFeature<br/>이 모듈이 허용되는가?"]
     A -->|아니오| X403
     A -->|예| Q[생성 직전 checkQuota<br/>하나 더 만들 여유가 있는가?]
     Q -->|아니오| X403
