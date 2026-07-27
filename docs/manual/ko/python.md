@@ -2,7 +2,7 @@
 
 ## 무엇을 만들게 되는가
 
-순서대로 세 가지다. 기동 시 SDK를 조립하고, 운영자가 활성화할 자리를 만들고, 규칙이 성립해야 하는 지점에 게이트를 놓는다.
+순서대로 세 가지입니다. 기동 시 SDK를 조립하고, 운영자가 활성화할 자리를 만들고, 규칙이 성립해야 하는 지점에 게이트를 놓습니다.
 
 ```mermaid
 sequenceDiagram
@@ -33,13 +33,13 @@ sequenceDiagram
 pip install https://github.com/accesscore-dev/accesscore-license-sdk-dist/releases/download/v1.0.0/accesscore_license-1.0.0-py3-none-any.whl
 ```
 
-네이티브 코어는 wheel 안에 플랫폼당 한 디렉터리로 담긴다. 공유 라이브러리의 출처를 자체 정책으로 고정한 배포는 `ACLIC_NATIVE_LIBRARY`로 파일을 지정한다 — 적재할 파일을 지정할 뿐 신뢰할 키를 지정하지 않는다.
+네이티브 코어는 wheel 안에 플랫폼당 한 디렉터리로 담깁니다. 공유 라이브러리의 출처를 자체 정책으로 고정한 배포는 `ACLIC_NATIVE_LIBRARY`로 파일을 지정합니다 — 적재할 파일을 지정할 뿐 신뢰할 키를 지정하지 않습니다.
 
-프레임워크 추가 설치는 쓰는 것만 가져온다: `accesscore-license[fastapi]`, `[django]`, `[flask]`.
+프레임워크 추가 설치는 쓰는 것만 가져옵니다. `accesscore-license[fastapi]`, `[django]`, `[flask]`.
 
 ## 제품이 제공해야 하는 것
 
-`accesscore_license.host`의 추상 클래스를 구현한다. 검증 키와 함께 앞의 둘만 필수다.
+`accesscore_license.host`의 추상 클래스를 구현합니다. 검증 키와 함께 앞의 둘만 필수입니다.
 
 | 클래스 | 답하는 것 |
 | --- | --- |
@@ -71,11 +71,11 @@ manager = LicenseManager(
 manager.verify(datetime.now(timezone.utc), integrity_ok=check_integrity())
 ```
 
-`verify`는 현재 시각과 무결성 검사 결과를 호출자에게서 받는다. 코어는 시계를 읽지 않고, 무결성 검사 대상은 언어마다 다르다.
+`verify`는 현재 시각과 무결성 검사 결과를 호출자에게서 받습니다. 코어는 시계를 읽지 않고, 무결성 검사 대상은 언어마다 다릅니다.
 
 ## 직접 만든 엔드포인트에서 활성화하기
 
-SDK는 본문을 만들고 응답을 해석한다. HTTP 호출은 애플리케이션의 몫이며, 타임아웃도 프록시도 애플리케이션이 정한다.
+SDK는 본문을 만들고 응답을 해석합니다. HTTP 호출은 애플리케이션의 몫이며, 타임아웃도 프록시도 애플리케이션이 정합니다.
 
 ```python
 @app.post("/license/activate")
@@ -96,7 +96,7 @@ async def activate(form: ActivationForm):
     return manager.gate.state()
 ```
 
-`activation_response`는 논스가 요청과 다르거나, 머신 지문이 이 호스트와 맞지 않거나, 페이로드가 검증되지 않는 응답을 거절한다. 다른 배포물에서 가로챈 응답을 여기에 쓸 수 없다.
+`activation_response`는 논스가 요청과 다르거나, 머신 지문이 이 호스트와 맞지 않거나, 페이로드가 검증되지 않는 응답을 거절합니다. 다른 배포물에서 가로챈 응답을 여기에 쓸 수 없습니다.
 
 ## 게이트 적용하기
 
@@ -120,11 +120,11 @@ manager.check_quota("USERS")
 fastapi_register_exception_handler(app)
 ```
 
-Django는 `django_license_middleware(gate, open_prefixes)`, Flask는 `flask_register(app, gate, open_prefixes)`, WSGI 전반은 `wsgi_license_gate`를 쓴다.
+Django는 `django_license_middleware(gate, open_prefixes)`, Flask는 `flask_register(app, gate, open_prefixes)`, WSGI 전반은 `wsgi_license_gate`를 씁니다.
 
-라이선스가 없는 동안 어느 경로를 열어 둘지는 제품이 정한다. 배포물은 자기 라이선스 화면에 닿아야 비로소 라이선스를 등록할 수 있다.
+라이선스가 없는 동안 어느 경로를 열어 둘지는 제품이 정합니다. 배포물은 자기 라이선스 화면에 닿아야 비로소 라이선스를 등록할 수 있습니다.
 
-각 호출이 놓이는 자리는 이렇다.
+각 호출이 놓이는 자리는 이렇습니다.
 
 ```mermaid
 flowchart LR
@@ -139,7 +139,7 @@ flowchart LR
 
 ## 거절을 응답으로 바꾸기
 
-`LicenseDenied`는 `status`, `error_code`, `message_key`, `arguments`, `http_status`를 싣고, `body()`가 모든 어댑터가 쓰는 문서를 만든다. 자체 응답 형태를 쓰는 제품은 키를 직접 번역한다.
+`LicenseDenied`는 `status`, `error_code`, `message_key`, `arguments`, `http_status`를 싣고, `body()`가 모든 어댑터가 쓰는 문서를 만듭니다. 자체 응답 형태를 쓰는 제품은 키를 직접 번역합니다.
 
 ```python
 from django.utils.translation import gettext
@@ -153,11 +153,11 @@ async def handle(request, denied):
     )
 ```
 
-메시지 키와 인자 순서는 [messages.ko.md](messages.md)에 있다.
+메시지 키와 인자 순서는 [messages.ko.md](messages.md)에 있습니다.
 
 ## 최신 상태 유지하기
 
-하트비트가 필요한 라이선스는 주기적인 갱신이 있어야 한다. SDK가 본문을 쓰고 응답을 읽으며, 주기와 전송은 애플리케이션이 정한다.
+하트비트가 필요한 라이선스는 주기적인 갱신이 있어야 합니다. SDK가 본문을 쓰고 응답을 읽으며, 주기와 전송은 애플리케이션이 정합니다.
 
 ```python
 def refresh_license() -> None:
@@ -177,7 +177,7 @@ def refresh_license() -> None:
     manager.verify(datetime.now(timezone.utc), integrity_ok=check_integrity())
 ```
 
-하트비트 실패는 배포물이 즉시 대응해야 하는 오류가 아니다. `heartbeatToleranceDays`가 지날 때까지 라이선스는 계속 쓸 수 있다. 기록만 남기고 다음 실행에 맡긴다.
+하트비트 실패는 배포물이 즉시 대응해야 하는 오류가 아닙니다. `heartbeatToleranceDays`가 지날 때까지 라이선스는 계속 쓸 수 있습니다. 기록만 남기고 다음 실행에 맡깁니다.
 
 ## 발급
 
@@ -189,7 +189,7 @@ print("License signing key fingerprint:", issuer.fingerprint_of(private_key_pem)
 signed = issuer.sign(payload, private_key_pem)
 ```
 
-개인키는 발급하는 쪽만 갖는다. 코어는 서명 직후 개인키를 메모리에서 지운다.
+개인키는 발급하는 쪽만 갖습니다. 코어는 서명 직후 개인키를 메모리에서 지웁니다.
 
 ## 제품 키와 릴리스 버전
 
@@ -206,8 +206,8 @@ entitled = releases.is_within_ceiling("3.2.0", "3.2")
 
 ## 출시 전 점검
 
-- [ ] 검증 키는 설정으로 바꿀 수 있는 경로가 아니라 애플리케이션과 함께 패키징된다.
-- [ ] 라이선스가 없는 동안 열어두는 경로가 라이선스 화면까지만 닿는다.
-- [ ] [messages.md](messages.md)의 모든 메시지 키가 출시하는 모든 로케일에 번역돼 있다.
-- [ ] 컨테이너가 호스트 머신 식별자를 읽기 전용으로 마운트한다. 그렇지 않으면 활성화가 `FINGERPRINT_UNAVAILABLE`로 실패한다.
-- [ ] 하트비트 주기가 `heartbeatIntervalDays`보다 짧다. 한 번 걸러도 곧바로 기한을 넘기지 않는다.
+- [ ] 검증 키는 설정으로 바꿀 수 있는 경로가 아니라 애플리케이션과 함께 패키징됩니다.
+- [ ] 라이선스가 없는 동안 열어두는 경로가 라이선스 화면까지만 닿습니다.
+- [ ] [messages.md](messages.md)의 모든 메시지 키가 출시하는 모든 로케일에 번역돼 있습니다.
+- [ ] 컨테이너가 호스트 머신 식별자를 읽기 전용으로 마운트합니다. 그렇지 않으면 활성화가 `FINGERPRINT_UNAVAILABLE`로 실패합니다.
+- [ ] 하트비트 주기가 `heartbeatIntervalDays`보다 짧습니다. 한 번 걸러도 곧바로 기한을 넘기지 않습니다.

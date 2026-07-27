@@ -2,7 +2,7 @@
      style="font-family:Pretendard,'Apple SD Gothic Neo','Malgun Gothic','Noto Sans KR',sans-serif">
   <title>하나의 코어가 서명하고, 같은 코어가 판정한다</title>
   <desc>라이선스 스튜디오가 개인키로 라이선스에 서명하고, 제품 배포물은 같은 Rust 코어로 검증·판정하여
-  게이트로 세 가지 질문에 답한다.</desc>
+  게이트로 세 가지 질문에 답합니다.</desc>
 
   <style>
     svg{ --bg:#FFFFFF; --ink:#1F2733; --muted:#5B6675; --hair:#D6E0EC; --primary:#1F6FB2;
@@ -46,7 +46,7 @@
   <!-- header -->
   <rect x="48" y="44" width="6" height="54" rx="3" fill="#1F6FB2"/>
   <text class="h1" x="76" y="72" dominant-baseline="central">하나의 코어가 서명하고, 같은 코어가 판정한다</text>
-  <text class="sub" x="76" y="108" dominant-baseline="central">제품은 라이선스를 직접 해석하지 않는다. 세 가지를 묻고 답을 읽을 뿐이다.</text>
+  <text class="sub" x="76" y="108" dominant-baseline="central">제품은 라이선스를 직접 해석하지 않습니다. 세 가지를 묻고 답을 읽을 뿐입니다.</text>
 
   <!-- band A : issuing side -->
   <rect x="48" y="152" width="1304" height="196" rx="18" fill="#F6F5FD" stroke="#D6E0EC"/>
@@ -74,8 +74,8 @@
   <circle cx="1018" cy="261" r="34" fill="#ECEBFB"/>
   <use href="#ic-shield" x="998" y="241" width="40" height="40" style="color:#534AB7"/>
   <text class="ct" x="1064" y="239" fill="#3C3489" dominant-baseline="central">서명 키</text>
-  <text class="cb" x="1064" y="265" dominant-baseline="central">Ed25519 개인키. 이 경계를</text>
-  <text class="cb" x="1064" y="287" dominant-baseline="central">넘어가지 않는다.</text>
+  <text class="cb" x="1064" y="265" dominant-baseline="central">Ed25519 개인키 —</text>
+  <text class="cb" x="1064" y="287" dominant-baseline="central">이 경계를 넘지 않음</text>
 
   <!-- the token travels -->
   <path d="M700 360 L700 424" stroke="#1F6FB2" stroke-width="3" fill="none" marker-end="url(#ah)"/>
@@ -97,18 +97,18 @@
   <use href="#ic-server" x="126" y="529" width="40" height="40" style="color:#0F7A5F"/>
   <text class="ct" x="192" y="525" fill="#085041" dominant-baseline="central">애플리케이션</text>
   <text class="cb" x="192" y="551" dominant-baseline="central">규칙이 성립해야 하는 자리에서</text>
-  <text class="cb" x="192" y="573" dominant-baseline="central">게이트를 호출한다</text>
+  <text class="cb" x="192" y="573" dominant-baseline="central">게이트를 호출</text>
 
   <circle cx="582" cy="549" r="34" fill="#E7F5EF"/>
   <use href="#ic-shield" x="562" y="529" width="40" height="40" style="color:#0F7A5F"/>
   <text class="ct" x="628" y="525" fill="#085041" dominant-baseline="central">게이트</text>
   <text class="cb" x="628" y="551" dominant-baseline="central">state · requireFeature ·</text>
-  <text class="cb" x="628" y="573" dominant-baseline="central">checkQuota — 캐시를 읽는다</text>
+  <text class="cb" x="628" y="573" dominant-baseline="central">checkQuota — 캐시를 읽음</text>
 
   <circle cx="1018" cy="549" r="34" fill="#E7F5EF"/>
   <use href="#ic-gear" x="998" y="529" width="40" height="40" style="color:#0F7A5F"/>
   <text class="ct" x="1064" y="525" fill="#085041" dominant-baseline="central">코어</text>
-  <text class="cb" x="1064" y="551" dominant-baseline="central">서명을 검증하고 판정한다</text>
+  <text class="cb" x="1064" y="551" dominant-baseline="central">서명을 검증하고 판정</text>
   <text class="cb" x="1064" y="573" dominant-baseline="central">— 15개 검사, 하나의 순서</text>
 
   <path d="M466 549 L514 549" stroke="#0F7A5F" stroke-width="3" fill="none" marker-end="url(#ah2)"/>
@@ -121,15 +121,15 @@
   <!-- footer -->
   <rect x="88" y="764" width="384" height="88" rx="10" fill="#F1F1EE" stroke="#D6E0EC"/>
   <text class="ct" x="112" y="794" fill="#3F4453" dominant-baseline="central">스키마 1</text>
-  <text class="cap" x="112" y="822" dominant-baseline="central">다른 스키마는 오독이 아니라 이름을 밝히며 거절된다</text>
+  <text class="cap" x="112" y="822" dominant-baseline="central">다른 스키마는 오독이 아니라 이름을 밝히며 거절됩니다</text>
 
   <rect x="508" y="764" width="384" height="88" rx="10" fill="#F1F1EE" stroke="#D6E0EC"/>
   <text class="ct" x="532" y="794" fill="#3F4453" dominant-baseline="central">여섯 플랫폼</text>
-  <text class="cap" x="532" y="822" dominant-baseline="central">코어가 각 패키지 안에 함께 들어간다</text>
+  <text class="cap" x="532" y="822" dominant-baseline="central">코어가 각 패키지 안에 함께 들어갑니다</text>
 
   <rect x="928" y="764" width="384" height="88" rx="10" fill="#F1F1EE" stroke="#D6E0EC"/>
   <text class="ct" x="952" y="794" fill="#3F4453" dominant-baseline="central">적합성 케이스 72개</text>
-  <text class="cap" x="952" y="822" dominant-baseline="central">모든 언어가 똑같이 답한다</text>
+  <text class="cap" x="952" y="822" dominant-baseline="central">모든 언어가 똑같이 답합니다</text>
 
   <marker id="ah2" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="13.5" markerHeight="13.5"
           markerUnits="userSpaceOnUse" orient="auto-start-reverse">
