@@ -1,5 +1,32 @@
 # Go
 
+## 무엇을 만들게 되는가
+
+순서대로 세 가지다. 기동 시 SDK를 조립하고, 운영자가 활성화할 자리를 만들고, 규칙이 성립해야 하는 지점에 게이트를 놓는다.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Boot as main()
+    participant Mgr as LicenseManager
+    participant Store as Store<br/>(직접 구현)
+    participant Gate as manager.Gate()
+
+    Note over Boot: ① 기동 시
+    Boot->>Mgr: NewLicenseManager(store, identity, keys, …)
+    Mgr->>Store: Load()
+    alt 등록된 것이 있다
+        Store-->>Mgr: 저장된 기록
+        Mgr->>Mgr: Verify(time.Now(), integrityOK)
+        Mgr->>Gate: 판정이 캐시된다
+        Note over Gate: 기능과 한도가 살아난다
+    else 아직 없다
+        Store-->>Mgr: 없음
+        Mgr->>Gate: NOT_ACTIVATED
+        Note over Gate: 운영자가 활성화할 때까지<br/>게이트를 지나는 호출은 모두 거절된다
+    end
+```
+
 ## 가져다 쓰기
 
 ```
@@ -43,7 +70,52 @@ if _, err := manager.Verify(time.Now(), integrityOK); err != nil {
 
 `Verify`는 현재 시각과 무결성 검사 결과를 호출자에게서 받는다. 코어는 시계를 읽지 않고, 무결성 검사 대상은 언어마다 다르다.
 
-## 강제
+## 직접 만든 엔드포인트에서 활성화하기
+
+SDK는 본문을 만들고 응답을 해석한다. HTTP 호출은 애플리케이션의 몫이며, 타임아웃도 전송 계층도 애플리케이션이 정한다.
+
+```go
+func activate(writer http.ResponseWriter, request *http.Request) {
+    var form struct{ ProductKey string `json:"productKey"` }
+    if err := json.NewDecoder(request.Body).Decode(&form); err != nil {
+        http.Error(writer, "bad request", http.StatusBadRequest)
+        return
+    }
+
+    activation, err := manager.ActivationRequest(form.ProductKey)
+    if err != nil {
+        aclic.WriteDenial(writer, err)
+        return
+    }
+
+    answer, err := postJSON(request.Context(),
+        manager.ActivationServerURL()+"/api/activations", activation.Body)
+    if err != nil {
+        http.Error(writer, "라이선스 서버가 응답하지 않았다", http.StatusBadGateway)
+        return
+    }
+
+    record, err := manager.ActivationResponse(answer, activation)   // 여기서 논스를 확인한다
+    if err != nil {
+        aclic.WriteDenial(writer, err)
+        return
+    }
+    if err := manager.Store(record); err != nil {
+        http.Error(writer, "라이선스를 저장하지 못했다", http.StatusInternalServerError)
+        return
+    }
+    if _, err := manager.Verify(time.Now(), integrityOK); err != nil {
+        aclic.WriteDenial(writer, err)
+        return
+    }
+
+    json.NewEncoder(writer).Encode(manager.Gate().State())
+}
+```
+
+`ActivationResponse`는 논스가 요청과 다르거나, 머신 지문이 이 호스트와 맞지 않거나, 페이로드가 검증되지 않는 응답을 거절한다. 다른 배포물에서 가로챈 응답을 여기에 쓸 수 없다.
+
+## 게이트 적용하기
 
 ```go
 // 라이선스가 없는 동안 모든 요청을 막는다.
@@ -63,9 +135,22 @@ gin·echo·fiber는 `GinLicenseGate`, `EchoLicenseGate`, `FiberLicenseGate`로 �
 
 라이선스가 없는 동안 어느 경로를 열어 둘지는 제품이 정한다. 배포물은 자기 라이선스 화면에 닿아야 비로소 라이선스를 등록할 수 있다.
 
-## 거부를 응답으로 옮기기
+각 호출이 놓이는 자리는 이렇다.
 
-거부는 `Status`, `ErrorCode`, `Denial`, `HTTPStatus`를 실은 `*LicenseDenied`다. `WriteDenial`이 모든 어댑터가 쓰는 문서를 쓰고, 자체 응답 형태를 쓰는 제품은 필드를 읽어 자기 형태로 만든다.
+```mermaid
+flowchart LR
+    R[HTTP 요청] --> F[LicenseGateMiddleware<br/>이 배포물에 라이선스가 있는가?]
+    F -->|없고, 막힌 경로다| X403[403 + 번역된 메시지]
+    F -->|있거나, 열린 경로다| A[RequireFeatureMiddleware<br/>이 모듈이 허용되는가?]
+    A -->|아니오| X403
+    A -->|예| Q[생성 직전 CheckQuota<br/>하나 더 만들 여유가 있는가?]
+    Q -->|아니오| X403
+    Q -->|예| H[핸들러 실행]
+```
+
+## 거절을 응답으로 바꾸기
+
+거절은 `Status`, `ErrorCode`, `Denial`, `HTTPStatus`를 실은 `*LicenseDenied`다. `WriteDenial`이 모든 어댑터가 쓰는 문서를 쓰고, 자체 응답 형태를 쓰는 제품은 필드를 읽어 자기 형태로 만든다.
 
 ```go
 var denied *aclic.LicenseDenied
@@ -77,6 +162,41 @@ if errors.As(err, &denied) {
 ```
 
 메시지 키와 인자 순서는 [messages.ko.md](messages.md)에 있다.
+
+## 최신 상태 유지하기
+
+하트비트가 필요한 라이선스는 주기적인 갱신이 있어야 한다. SDK가 본문을 쓰고 응답을 읽으며, 주기와 전송은 애플리케이션이 정한다.
+
+```go
+func refreshLicense(ctx context.Context) error {
+    if !manager.Gate().State().HeartbeatRequired {
+        return nil
+    }
+
+    beat, err := manager.HeartbeatRequest()
+    if err != nil {
+        return err
+    }
+
+    answer, err := postSigned(ctx,
+        manager.ActivationServerURL()+"/api/heartbeats", beat.Body, beat.Signature)
+    if err != nil {
+        return err   // 허용 기간이 지나기 전까지 라이선스는 계속 쓸 수 있다
+    }
+
+    record, err := manager.HeartbeatResponse(answer)
+    if err != nil {
+        return err
+    }
+    if err := manager.Store(record); err != nil {
+        return err
+    }
+    _, err = manager.Verify(time.Now(), integrityOK)
+    return err
+}
+```
+
+하트비트 실패는 배포물이 즉시 대응해야 하는 오류가 아니다. `heartbeatToleranceDays`가 지날 때까지 라이선스는 계속 쓸 수 있다. 기록만 남기고 다음 실행에 맡긴다.
 
 ## 코어 직접 호출
 
@@ -90,3 +210,11 @@ if err := aclic.Shared.Release(map[string]any{
     return err
 }
 ```
+
+## 출시 전 점검
+
+- [ ] 릴리스 바이너리를 만드는 모든 빌드에서 `CGO_ENABLED=1`이다.
+- [ ] 검증 키는 설정으로 바꿀 수 있는 경로가 아니라 빌드에 컴파일돼 들어간다.
+- [ ] 라이선스가 없는 동안 열어두는 경로가 라이선스 화면까지만 닿는다.
+- [ ] [messages.md](messages.md)의 모든 메시지 키가 출시하는 모든 로케일에 번역돼 있다.
+- [ ] 컨테이너가 호스트 머신 식별자를 읽기 전용으로 마운트한다. 그렇지 않으면 활성화가 `FINGERPRINT_UNAVAILABLE`로 실패한다.

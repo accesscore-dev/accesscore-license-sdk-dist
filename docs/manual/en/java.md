@@ -1,5 +1,33 @@
 # Java
 
+## What you are going to build
+
+Three things, in this order: wire the SDK at startup, give an operator a way to activate, and
+put the gate where a rule has to hold.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Boot as Spring context
+    participant Mgr as LicenseManager
+    participant Store as LicenseStore<br/>(your JPA repository)
+    participant Gate as The gate
+
+    Note over Boot: ① at startup
+    Boot->>Mgr: builder(store, identity, keys).build()
+    Mgr->>Store: load()
+    alt something was registered
+        Store-->>Mgr: the stored record
+        Mgr->>Mgr: verify(now, integrity)
+        Mgr->>Gate: refresh(the judgement)
+        Note over Gate: features and limits are live
+    else nothing yet
+        Store-->>Mgr: empty
+        Mgr->>Gate: refresh(NOT_ACTIVATED)
+        Note over Gate: every gated call refuses<br/>until an operator activates
+    end
+```
+
 ## Taking it
 
 ```groovy
@@ -79,35 +107,95 @@ never a key to trust, so it cannot weaken any check.
 
 Seven interfaces, all on `LicenseSpi`. Only the first three are required.
 
-| Interface | What it answers |
-| --- | --- |
-| `LicenseStore` | reading and writing the registration |
-| `ProductIdentity` | which product this is, and which release |
-| — the verification keys | passed to the builder, from a classpath resource |
-| `FeatureCatalogue` | the feature keys this deployment gates on |
-| `QuotaCounter` | the current count per quota code |
-| `FeatureActivationChecker` | whether an administrator switched a feature on |
-| `AuditRecorder` | where license events are recorded |
-| `ActivationServerDirectory` | where the activation server is |
+| Interface | What it answers | Typical implementation |
+| --- | --- | --- |
+| `LicenseStore` | reading and writing the registration | a one-row JPA entity, or a file under the data directory |
+| `ProductIdentity` | which product this is, and which release | constants plus the build's version |
+| — the verification keys | passed to the builder | a PEM on the classpath, read at start |
+| `FeatureCatalogue` | the feature keys this deployment gates on | an enum of your product's features |
+| `QuotaCounter` | the current count per quota code | `repository.count()` per code |
+| `FeatureActivationChecker` | whether an administrator switched a feature on | your settings table |
+| `AuditRecorder` | where license events are recorded | an audit table |
+| `ActivationServerDirectory` | where the activation server is | a settings row an operator fills in |
+
+The first three are required because without them the core cannot answer at all: it has nowhere
+to read the license from, no product to compare against, and no key to verify with.
 
 ## Assembling it
 
 ```java
-LicenseManager manager = LicenseManager
-        .builder(store, identity, List.of(KeyMaterial.of("acps-2026-01", publicKeyPem)))
-        .catalogue(catalogue)
-        .counter(userCounter)
-        .counter(hardwareCounter)
-        .audit(auditRecorder)
-        .configuredServerUrl(properties.getServerUrl())
-        .instanceId(properties.getInstanceId())
-        .build();
+@Configuration
+class LicenseConfig {
 
-manager.verify(Instant.now(), integrityChecker.verify());
+    @Bean
+    LicenseManager licenseManager(LicenseStore store,
+                                  ProductIdentity identity,
+                                  FeatureCatalogue catalogue,
+                                  List<QuotaCounter> counters,
+                                  AuditRecorder audit,
+                                  LicenseProperties properties) throws IOException {
+
+        String publicKeyPem = new String(
+                new ClassPathResource("license-public-key.pem").getInputStream().readAllBytes(),
+                StandardCharsets.UTF_8);
+
+        LicenseManager.Builder builder = LicenseManager
+                .builder(store, identity, List.of(KeyMaterial.of("acps-2026-01", publicKeyPem)))
+                .catalogue(catalogue)
+                .audit(audit)
+                .configuredServerUrl(properties.getServerUrl())
+                .instanceId(properties.getInstanceId());
+
+        counters.forEach(builder::counter);
+        return builder.build();
+    }
+
+    @Bean
+    ApplicationRunner licenseAtStartup(LicenseManager manager, IntegrityChecker integrity) {
+        return args -> manager.verify(Instant.now(), integrity.verify());
+    }
+}
 ```
 
 `verify` takes the instant and the integrity result from the caller. The core reads no clock,
 and what to hash for an integrity check differs per language.
+
+Register more than one key when a rotation is in flight — the token's `kid` picks which applies:
+
+```java
+List.of(KeyMaterial.of("acps-2026-01", currentKeyPem),
+        KeyMaterial.of("acps-2027-01", incomingKeyPem))
+```
+
+## Activating from your own endpoint
+
+The SDK builds the body and reads the answer; the HTTP call is yours, with your timeouts and
+your proxy.
+
+```java
+@PostMapping("/license/activate")
+public ActivationView activate(@RequestBody @Validated ActivationForm form) {
+
+    ActivationRequest request = manager.activationRequest(form.productKey());
+
+    ActivationAnswer answer = restClient.post()
+            .uri(manager.activationServerUrl() + "/api/activations")
+            .contentType(MediaType.APPLICATION_JSON)
+            .body(request.body())
+            .retrieve()
+            .body(ActivationAnswer.class);
+
+    LicenseRecord record = manager.activationResponse(answer, request);   // nonce checked here
+    manager.store(record);
+    manager.verify(Instant.now(), integrity.verify());                    // the gate refreshes
+
+    return ActivationView.of(manager.gate().state());
+}
+```
+
+`activationResponse` refuses an answer whose nonce does not match the request, whose machine
+fingerprints do not match this host, or whose payload does not verify — so a captured reply
+from another deployment cannot be replayed here.
 
 ## Enforcing it
 
@@ -126,6 +214,19 @@ manager.checkQuota(PacsQuotas.USERS);
 Which paths stay open while unlicensed is the product's decision: a deployment has to reach its
 own license screen in order to stop being unlicensed, and only the product knows where it is.
 
+Where each call belongs:
+
+```mermaid
+flowchart LR
+    R[an HTTP request] --> F[LicenseEnforcementFilter<br/>is the deployment licensed at all?]
+    F -->|no, and the path is gated| X403[403 + the translated message]
+    F -->|yes, or the path is open| A["@RequiresFeature on the controller<br/>is this module licensed?"]
+    A -->|no| X403
+    A -->|yes| Q[checkQuota before creating<br/>is there room for one more?]
+    Q -->|no| X403
+    Q -->|yes| H[your handler runs]
+```
+
 ## Turning a refusal into a response
 
 `LicenseDeniedException` carries a status, an error code, a message key, and its arguments.
@@ -143,6 +244,33 @@ public ResponseEntity<ApiResponse<Void>> handle(LicenseDeniedException denied, L
 ```
 
 Message keys and their argument order: [messages.md](messages.md).
+
+## Keeping it fresh
+
+A license that requires a heartbeat needs a scheduled refresh. The SDK writes the body and reads
+the answer; the schedule and the transport are yours.
+
+```java
+@Scheduled(cron = "0 17 3 * * *")
+void refreshLicense() {
+    if (!manager.gate().state().heartbeatRequired()) {
+        return;
+    }
+    HeartbeatRequest request = manager.heartbeatRequest();
+    HeartbeatAnswer answer = restClient.post()
+            .uri(manager.activationServerUrl() + "/api/heartbeats")
+            .header("X-Activation-Signature", request.signature())
+            .body(request.body())
+            .retrieve()
+            .body(HeartbeatAnswer.class);
+
+    manager.store(manager.heartbeatResponse(answer));
+    manager.verify(Instant.now(), integrity.verify());
+}
+```
+
+A failed heartbeat is not an error the deployment has to act on immediately — the license stays
+usable until `heartbeatToleranceDays` passes. Log it and let the next run try again.
 
 ## Issuing
 
@@ -176,3 +304,13 @@ ReleaseVersions releases = new ReleaseVersions();
 boolean entitled = releases.isWithinCeiling("3.2.0", "3.2");
 String sortKey = releases.sortKey("3.2");   // for ordering a list in SQL
 ```
+
+## Before you ship
+
+- [ ] The verification key is a classpath resource, not a configurable path.
+- [ ] The paths that stay open while unlicensed reach your license screen and nothing else.
+- [ ] Every message key in [messages.md](messages.md) has a translation in every locale you ship.
+- [ ] A container mounts the host machine identifiers read-only, or activation fails with
+      `FINGERPRINT_UNAVAILABLE`.
+- [ ] The heartbeat schedule is shorter than `heartbeatIntervalDays`, so one missed run is not
+      immediately a lapse.

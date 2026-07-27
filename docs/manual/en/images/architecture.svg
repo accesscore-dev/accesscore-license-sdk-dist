@@ -1,0 +1,138 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 920" width="1400" height="920" role="img"
+     style="font-family:Pretendard,'Apple SD Gothic Neo','Malgun Gothic','Noto Sans KR',sans-serif">
+  <title>One core signs, the same core judges</title>
+  <desc>The license studio signs a license with a private key; a product deployment verifies and
+  judges it with the same Rust core, and answers three questions through a gate.</desc>
+
+  <style>
+    svg{ --bg:#FFFFFF; --ink:#1F2733; --muted:#5B6675; --hair:#D6E0EC; --primary:#1F6FB2;
+      --edge-fill:#E8F1FB; --edge-line:#1F6FB2; --edge-ink:#124267;
+      --api-fill:#ECEBFB;  --api-line:#534AB7;  --api-ink:#3C3489;
+      --k8s-fill:#E7F5EF;  --k8s-line:#0F7A5F;  --k8s-ink:#085041;
+      --data-fill:#F1F1EE; --data-line:#7A8398; --data-ink:#3F4453;
+      --card:#F7FAFD; }
+    .on-accent{ fill:#FFFFFF }
+    .h1{ font-size:42px; font-weight:700; fill:#1F2733 }
+    .sub{ font-size:18px; fill:#5B6675 }
+    .pill{ font-size:18px; font-weight:600 }
+    .ct{ font-size:21px; font-weight:600 }
+    .cb{ font-size:16px; fill:#5B6675 }
+    .cap{ font-size:14px; fill:#5B6675 }
+    .mono{ font-size:15px; font-family:'SFMono-Regular',Consolas,'Liberation Mono',monospace; fill:#124267 }
+  </style>
+
+  <defs>
+    <marker id="ah" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="13.5" markerHeight="13.5"
+            markerUnits="userSpaceOnUse" orient="auto-start-reverse">
+      <path d="M2 2 L10 6 L2 10" fill="none" stroke="#1F6FB2" stroke-width="2" stroke-linecap="round"/>
+    </marker>
+    <filter id="sh" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#1F2733" flood-opacity="0.08"/>
+    </filter>
+    <symbol id="ic-database" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+            stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="7" ry="3"/><path d="M5 5v14c0 1.7 3.1 3 7 3s7-1.3 7-3V5"/><path d="M5 12c0 1.7 3.1 3 7 3s7-1.3 7-3"/></symbol>
+    <symbol id="ic-doc" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+            stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4"/><path d="M9 13h6M9 16.5h6M9 9.5h2"/></symbol>
+    <symbol id="ic-shield" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+            stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6z"/><path d="M9 12l2 2 4-4"/></symbol>
+    <symbol id="ic-server" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+            stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="7" rx="2"/><rect x="4" y="13" width="16" height="7" rx="2"/><path d="M8 7.5h.01M8 16.5h.01"/></symbol>
+    <symbol id="ic-gear" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+            stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></symbol>
+  </defs>
+
+  <rect width="1400" height="920" fill="#FFFFFF"/>
+
+  <!-- header -->
+  <rect x="48" y="44" width="6" height="54" rx="3" fill="#1F6FB2"/>
+  <text class="h1" x="76" y="72" dominant-baseline="central">One core signs, the same core judges</text>
+  <text class="sub" x="76" y="108" dominant-baseline="central">Your product never parses a license. It asks three questions and reads the answer.</text>
+
+  <!-- band A : issuing side -->
+  <rect x="48" y="152" width="1304" height="196" rx="18" fill="#F6F5FD" stroke="#D6E0EC"/>
+  <rect x="68" y="138" width="298" height="34" rx="17" fill="#534AB7"/>
+  <text class="pill on-accent" x="217" y="155" text-anchor="middle" dominant-baseline="central">① Issuing side — license studio</text>
+
+  <g filter="url(#sh)">
+    <rect x="88" y="202" width="368" height="118" rx="10" fill="#FFFFFF" stroke="#534AB7"/>
+    <rect x="524" y="202" width="368" height="118" rx="10" fill="#FFFFFF" stroke="#534AB7"/>
+    <rect x="960" y="202" width="368" height="118" rx="10" fill="#FFFFFF" stroke="#534AB7"/>
+  </g>
+
+  <circle cx="146" cy="261" r="34" fill="#ECEBFB"/>
+  <use href="#ic-database" x="126" y="241" width="40" height="40" style="color:#534AB7"/>
+  <text class="ct" x="192" y="239" fill="#3C3489" dominant-baseline="central">Catalogue</text>
+  <text class="cb" x="192" y="265" dominant-baseline="central">What may be sold: products,</text>
+  <text class="cb" x="192" y="287" dominant-baseline="central">releases, features, quotas</text>
+
+  <circle cx="582" cy="261" r="34" fill="#ECEBFB"/>
+  <use href="#ic-doc" x="562" y="241" width="40" height="40" style="color:#534AB7"/>
+  <text class="ct" x="628" y="239" fill="#3C3489" dominant-baseline="central">Ledger</text>
+  <text class="cb" x="628" y="265" dominant-baseline="central">What was sold: customers,</text>
+  <text class="cb" x="628" y="287" dominant-baseline="central">contracts, keys, seats</text>
+
+  <circle cx="1018" cy="261" r="34" fill="#ECEBFB"/>
+  <use href="#ic-shield" x="998" y="241" width="40" height="40" style="color:#534AB7"/>
+  <text class="ct" x="1064" y="239" fill="#3C3489" dominant-baseline="central">Signing key</text>
+  <text class="cb" x="1064" y="265" dominant-baseline="central">Ed25519 private key. It never</text>
+  <text class="cb" x="1064" y="287" dominant-baseline="central">leaves this side.</text>
+
+  <!-- the token travels -->
+  <path d="M700 360 L700 424" stroke="#1F6FB2" stroke-width="3" fill="none" marker-end="url(#ah)"/>
+  <text class="cap" x="726" y="372" dominant-baseline="central" fill="#124267">A signed license token</text>
+  <text class="mono" x="726" y="396" dominant-baseline="central">base64url(payload).base64url(signature)</text>
+
+  <!-- band B : deployment side -->
+  <rect x="48" y="436" width="1304" height="288" rx="18" fill="#F0F8F5" stroke="#D6E0EC"/>
+  <rect x="68" y="422" width="318" height="34" rx="17" fill="#0F7A5F"/>
+  <text class="pill on-accent" x="227" y="439" text-anchor="middle" dominant-baseline="central">② Deployment side — your product</text>
+
+  <g filter="url(#sh)">
+    <rect x="88" y="486" width="368" height="126" rx="10" fill="#FFFFFF" stroke="#0F7A5F"/>
+    <rect x="524" y="486" width="368" height="126" rx="10" fill="#FFFFFF" stroke="#0F7A5F"/>
+    <rect x="960" y="486" width="368" height="126" rx="10" fill="#FFFFFF" stroke="#0F7A5F"/>
+  </g>
+
+  <circle cx="146" cy="549" r="34" fill="#E7F5EF"/>
+  <use href="#ic-server" x="126" y="529" width="40" height="40" style="color:#0F7A5F"/>
+  <text class="ct" x="192" y="525" fill="#085041" dominant-baseline="central">Your application</text>
+  <text class="cb" x="192" y="551" dominant-baseline="central">Calls the gate where a rule</text>
+  <text class="cb" x="192" y="573" dominant-baseline="central">has to hold</text>
+
+  <circle cx="582" cy="549" r="34" fill="#E7F5EF"/>
+  <use href="#ic-shield" x="562" y="529" width="40" height="40" style="color:#0F7A5F"/>
+  <text class="ct" x="628" y="525" fill="#085041" dominant-baseline="central">The gate</text>
+  <text class="cb" x="628" y="551" dominant-baseline="central">state · requireFeature ·</text>
+  <text class="cb" x="628" y="573" dominant-baseline="central">checkQuota — reads a cache</text>
+
+  <circle cx="1018" cy="549" r="34" fill="#E7F5EF"/>
+  <use href="#ic-gear" x="998" y="529" width="40" height="40" style="color:#0F7A5F"/>
+  <text class="ct" x="1064" y="525" fill="#085041" dominant-baseline="central">The core</text>
+  <text class="cb" x="1064" y="551" dominant-baseline="central">Verifies the signature and</text>
+  <text class="cb" x="1064" y="573" dominant-baseline="central">judges — 15 checks, one order</text>
+
+  <path d="M466 549 L514 549" stroke="#0F7A5F" stroke-width="3" fill="none" marker-end="url(#ah2)"/>
+  <path d="M902 549 L950 549" stroke="#0F7A5F" stroke-width="3" fill="none" marker-end="url(#ah2)"/>
+
+  <rect x="88" y="636" width="1240" height="64" rx="12" fill="#FFFFFF" stroke="#D6E0EC"/>
+  <text class="cap" x="708" y="658" text-anchor="middle" dominant-baseline="central" fill="#3F4453">What your application supplies to the core</text>
+  <text class="cb" x="708" y="680" text-anchor="middle" dominant-baseline="central">Store · ProductIdentity · FeatureCatalogue · QuotaCounter · the current instant</text>
+
+  <!-- footer -->
+  <rect x="88" y="764" width="384" height="88" rx="10" fill="#F1F1EE" stroke="#D6E0EC"/>
+  <text class="ct" x="112" y="794" fill="#3F4453" dominant-baseline="central">Schema 1</text>
+  <text class="cap" x="112" y="822" dominant-baseline="central">Another schema is refused by name, not misread</text>
+
+  <rect x="508" y="764" width="384" height="88" rx="10" fill="#F1F1EE" stroke="#D6E0EC"/>
+  <text class="ct" x="532" y="794" fill="#3F4453" dominant-baseline="central">Six platforms</text>
+  <text class="cap" x="532" y="822" dominant-baseline="central">The core travels inside each package</text>
+
+  <rect x="928" y="764" width="384" height="88" rx="10" fill="#F1F1EE" stroke="#D6E0EC"/>
+  <text class="ct" x="952" y="794" fill="#3F4453" dominant-baseline="central">72 conformance cases</text>
+  <text class="cap" x="952" y="822" dominant-baseline="central">Every language answers them identically</text>
+
+  <marker id="ah2" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="13.5" markerHeight="13.5"
+          markerUnits="userSpaceOnUse" orient="auto-start-reverse">
+    <path d="M2 2 L10 6 L2 10" fill="none" stroke="#0F7A5F" stroke-width="2" stroke-linecap="round"/>
+  </marker>
+</svg>

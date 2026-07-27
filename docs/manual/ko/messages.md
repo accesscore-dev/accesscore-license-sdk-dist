@@ -4,11 +4,31 @@
 
 호스트는 아래 키를 자신이 지원하는 모든 로케일에 정의해야 한다. 빠진 키는 가장 나쁜 순간에 번역되지 않은 자리표시자로 드러난다 — 운영자는 이미 막혀 있다.
 
+## 메시지는 어디서 오는가
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant App as 애플리케이션
+    participant Gate as 게이트
+    participant I18n as 메시지 번들
+    actor User as 사용자
+
+    App->>Gate: requireFeature("ATTENDANCE")
+    Gate-->>App: 거절 { errorCode, messageKey, arguments, httpStatus }
+    Note over App: SDK는 여기까지다 —<br/>문장을 만들지 않는다
+    App->>I18n: lookup(messageKey, arguments, locale)
+    I18n-->>App: "이 배포에는 ATTENDANCE 모듈이 포함되어 있지 않습니다."
+    App-->>User: 403 + 완성된 메시지
+```
+
+`errorCode`는 클라이언트 코드가 분기할 값이고, `messageKey`와 인자는 사람이 읽을 문장을 만들 재료다. 완성된 문장으로 분기하면 번역을 한 번 손보는 순간 깨진다.
+
 ## 인자 순서도 키의 일부다
 
 순서는 여기서만 정한다. 인자 두 개를 바꿔 쓰는 호스트는 숫자를 엉뚱한 자리에 넣고 운영자에게 사실이 아닌 것을 말한다.
 
-## 판정이 내는 거부
+## 판정이 내는 거절
 
 | 키 | 인자 | 언제 |
 | --- | --- | --- |
@@ -30,7 +50,7 @@
 
 숫자가 있어야 판단이 서는 사유는 값을 함께 싣는다. 페이로드를 읽지 못해 값을 채울 수 없으면 빈 자리표시자를 그리지 않고 `error.license.notValid`로 물러선다.
 
-## 게이트가 내는 거부
+## 게이트가 내는 거절
 
 | 키 | 인자 | 언제 |
 | --- | --- | --- |
@@ -59,11 +79,11 @@
 | `error.license.notActivated` | 갱신하거나 반납할 것이 없음 |
 | `error.license.alreadyRegistered` | 다른 키의 사용 가능한 라이선스가 이미 등록됨 |
 
-토큰이 도착한 뒤 거부되는 네 경우 — 잘못된 서명 키, 다른 머신에 묶인 라이선스, 재전송된 답, 읽을 수 없는 답 — 를 따로 이름 붙이는 것은 의도한 것이다. 운영자가 취해야 할 조치가 네 가지로 다르고, "검증할 수 없습니다" 하나로 묶으면 넷 다 진단이 불가능해진다.
+토큰이 도착한 뒤 거절되는 네 경우 — 잘못된 서명 키, 다른 머신에 묶인 라이선스, 재전송된 답, 읽을 수 없는 답 — 를 따로 이름 붙이는 것은 의도한 것이다. 운영자가 취해야 할 조치가 네 가지로 다르고, "검증할 수 없습니다" 하나로 묶으면 넷 다 진단이 불가능해진다.
 
 ## 오류 코드
 
-모든 거부는 클라이언트가 분기할 코드를 함께 싣고, 그 코드는 모두 `LICENSE_`로 시작한다. 이 접두사로 클라이언트는 메시지를 파싱하지 않고 라이선스 거부와 권한 거부를 구분한다.
+모든 거절은 클라이언트가 분기할 코드를 함께 싣고, 그 코드는 모두 `LICENSE_`로 시작한다. 이 접두사로 클라이언트는 메시지를 파싱하지 않고 라이선스 거절과 권한 거절을 구분한다.
 
 - 판정의 코드는 `LICENSE_` + 상태 이름이다: `LICENSE_HEARTBEAT_OVERDUE`.
 - 게이트의 코드는 `LICENSE_FEATURE_NOT_LICENSED`, `LICENSE_FEATURE_NOT_ACTIVATED`, `LICENSE_QUOTA_EXCEEDED`다.

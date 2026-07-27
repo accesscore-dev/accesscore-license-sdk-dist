@@ -7,6 +7,27 @@ language is added.
 A host must define every key below in each locale it serves. A missing key surfaces as an
 untranslated placeholder at the worst moment — the operator is already locked out.
 
+## Where a message comes from
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant App as Your application
+    participant Gate as The gate
+    participant I18n as Your message bundle
+    actor User
+
+    App->>Gate: requireFeature("ATTENDANCE")
+    Gate-->>App: refusal { errorCode, messageKey, arguments, httpStatus }
+    Note over App: the SDK stops here —<br/>it never renders a sentence
+    App->>I18n: lookup(messageKey, arguments, locale)
+    I18n-->>App: "이 배포에는 ATTENDANCE 모듈이 포함되어 있지 않습니다."
+    App-->>User: 403 + the rendered message
+```
+
+The `errorCode` is for your client code to branch on; the `messageKey` and its arguments are for
+a human. Branching on the rendered sentence breaks the moment someone changes a translation.
+
 ## Argument order is part of the key
 
 The order is fixed here and nowhere else. A host that swaps two arguments renders a number in the

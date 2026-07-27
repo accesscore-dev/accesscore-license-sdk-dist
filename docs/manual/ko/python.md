@@ -1,5 +1,32 @@
 # Python
 
+## 무엇을 만들게 되는가
+
+순서대로 세 가지다. 기동 시 SDK를 조립하고, 운영자가 활성화할 자리를 만들고, 규칙이 성립해야 하는 지점에 게이트를 놓는다.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Boot as 애플리케이션 기동
+    participant Mgr as LicenseManager
+    participant Store as Store<br/>(모델이나 파일)
+    participant Gate as manager.gate
+
+    Note over Boot: ① 기동 시
+    Boot->>Mgr: LicenseManager(store=…, identity=…, keys=…)
+    Mgr->>Store: load()
+    alt 등록된 것이 있다
+        Store-->>Mgr: 저장된 기록
+        Mgr->>Mgr: verify(now, integrity_ok=…)
+        Mgr->>Gate: 판정이 캐시된다
+        Note over Gate: 기능과 한도가 살아난다
+    else 아직 없다
+        Store-->>Mgr: None
+        Mgr->>Gate: NOT_ACTIVATED
+        Note over Gate: 운영자가 활성화할 때까지<br/>게이트를 지나는 호출은 모두 거절된다
+    end
+```
+
 ## 가져다 쓰기
 
 ```
@@ -46,7 +73,32 @@ manager.verify(datetime.now(timezone.utc), integrity_ok=check_integrity())
 
 `verify`는 현재 시각과 무결성 검사 결과를 호출자에게서 받는다. 코어는 시계를 읽지 않고, 무결성 검사 대상은 언어마다 다르다.
 
-## 강제
+## 직접 만든 엔드포인트에서 활성화하기
+
+SDK는 본문을 만들고 응답을 해석한다. HTTP 호출은 애플리케이션의 몫이며, 타임아웃도 프록시도 애플리케이션이 정한다.
+
+```python
+@app.post("/license/activate")
+async def activate(form: ActivationForm):
+    request = manager.activation_request(form.product_key)
+
+    async with httpx.AsyncClient(timeout=20.0) as client:
+        response = await client.post(
+            f"{manager.activation_server_url()}/api/activations", json=request.body
+        )
+        response.raise_for_status()
+        answer = response.json()
+
+    record = manager.activation_response(answer, request)   # 여기서 논스를 확인한다
+    manager.store_record(record)
+    manager.verify(datetime.now(timezone.utc), integrity_ok=check_integrity())
+
+    return manager.gate.state()
+```
+
+`activation_response`는 논스가 요청과 다르거나, 머신 지문이 이 호스트와 맞지 않거나, 페이로드가 검증되지 않는 응답을 거절한다. 다른 배포물에서 가로챈 응답을 여기에 쓸 수 없다.
+
+## 게이트 적용하기
 
 ```python
 from accesscore_license.adapters import (
@@ -64,7 +116,7 @@ async def list_attendance(): ...
 # 한도 하나, 추가 직전에.
 manager.check_quota("USERS")
 
-# 어디서 난 거부든 공통 문서로 나가게.
+# 어디서 난 거절이든 공통 문서로 나가게.
 fastapi_register_exception_handler(app)
 ```
 
@@ -72,7 +124,20 @@ Django는 `django_license_middleware(gate, open_prefixes)`, Flask는 `flask_regi
 
 라이선스가 없는 동안 어느 경로를 열어 둘지는 제품이 정한다. 배포물은 자기 라이선스 화면에 닿아야 비로소 라이선스를 등록할 수 있다.
 
-## 거부를 응답으로 옮기기
+각 호출이 놓이는 자리는 이렇다.
+
+```mermaid
+flowchart LR
+    R[HTTP 요청] --> F[ASGI/WSGI 게이트<br/>이 배포물에 라이선스가 있는가?]
+    F -->|없고, 막힌 경로다| X403[403 + 번역된 메시지]
+    F -->|있거나, 열린 경로다| A[기능 의존성<br/>이 모듈이 허용되는가?]
+    A -->|아니오| X403
+    A -->|예| Q[생성 직전 check_quota<br/>하나 더 만들 여유가 있는가?]
+    Q -->|아니오| X403
+    Q -->|예| H[뷰 실행]
+```
+
+## 거절을 응답으로 바꾸기
 
 `LicenseDenied`는 `status`, `error_code`, `message_key`, `arguments`, `http_status`를 싣고, `body()`가 모든 어댑터가 쓰는 문서를 만든다. 자체 응답 형태를 쓰는 제품은 키를 직접 번역한다.
 
@@ -89,6 +154,30 @@ async def handle(request, denied):
 ```
 
 메시지 키와 인자 순서는 [messages.ko.md](messages.md)에 있다.
+
+## 최신 상태 유지하기
+
+하트비트가 필요한 라이선스는 주기적인 갱신이 있어야 한다. SDK가 본문을 쓰고 응답을 읽으며, 주기와 전송은 애플리케이션이 정한다.
+
+```python
+def refresh_license() -> None:
+    if not manager.gate.state().heartbeat_required:
+        return
+
+    request = manager.heartbeat_request()
+    response = httpx.post(
+        f"{manager.activation_server_url()}/api/heartbeats",
+        json=request.body,
+        headers={"X-Activation-Signature": request.signature},
+        timeout=20.0,
+    )
+    response.raise_for_status()
+
+    manager.store_record(manager.heartbeat_response(response.json()))
+    manager.verify(datetime.now(timezone.utc), integrity_ok=check_integrity())
+```
+
+하트비트 실패는 배포물이 즉시 대응해야 하는 오류가 아니다. `heartbeatToleranceDays`가 지날 때까지 라이선스는 계속 쓸 수 있다. 기록만 남기고 다음 실행에 맡긴다.
 
 ## 발급
 
@@ -114,3 +203,11 @@ shown = keys.masked("ACPS", key)
 releases = ReleaseVersions()
 entitled = releases.is_within_ceiling("3.2.0", "3.2")
 ```
+
+## 출시 전 점검
+
+- [ ] 검증 키는 설정으로 바꿀 수 있는 경로가 아니라 애플리케이션과 함께 패키징된다.
+- [ ] 라이선스가 없는 동안 열어두는 경로가 라이선스 화면까지만 닿는다.
+- [ ] [messages.md](messages.md)의 모든 메시지 키가 출시하는 모든 로케일에 번역돼 있다.
+- [ ] 컨테이너가 호스트 머신 식별자를 읽기 전용으로 마운트한다. 그렇지 않으면 활성화가 `FINGERPRINT_UNAVAILABLE`로 실패한다.
+- [ ] 하트비트 주기가 `heartbeatIntervalDays`보다 짧다. 한 번 걸러도 곧바로 기한을 넘기지 않는다.

@@ -1,5 +1,33 @@
 # Python
 
+## What you are going to build
+
+Three things, in this order: wire the SDK at startup, give an operator a way to activate, and
+put the gate where a rule has to hold.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Boot as Application startup
+    participant Mgr as LicenseManager
+    participant Store as Store<br/>(your model or file)
+    participant Gate as manager.gate
+
+    Note over Boot: ① at startup
+    Boot->>Mgr: LicenseManager(store=…, identity=…, keys=…)
+    Mgr->>Store: load()
+    alt something was registered
+        Store-->>Mgr: the stored record
+        Mgr->>Mgr: verify(now, integrity_ok=…)
+        Mgr->>Gate: the judgement is cached
+        Note over Gate: features and limits are live
+    else nothing yet
+        Store-->>Mgr: None
+        Mgr->>Gate: NOT_ACTIVATED
+        Note over Gate: every gated call refuses<br/>until an operator activates
+    end
+```
+
 ## Taking it
 
 ```
@@ -51,6 +79,34 @@ manager.verify(datetime.now(timezone.utc), integrity_ok=check_integrity())
 `verify` takes the instant and the integrity result from the caller. The core reads no clock,
 and what to hash for an integrity check differs per language.
 
+## Activating from your own endpoint
+
+The SDK builds the body and reads the answer; the HTTP call is yours, with your timeouts and
+your proxy.
+
+```python
+@app.post("/license/activate")
+async def activate(form: ActivationForm):
+    request = manager.activation_request(form.product_key)
+
+    async with httpx.AsyncClient(timeout=20.0) as client:
+        response = await client.post(
+            f"{manager.activation_server_url()}/api/activations", json=request.body
+        )
+        response.raise_for_status()
+        answer = response.json()
+
+    record = manager.activation_response(answer, request)   # nonce checked here
+    manager.store_record(record)
+    manager.verify(datetime.now(timezone.utc), integrity_ok=check_integrity())
+
+    return manager.gate.state()
+```
+
+`activation_response` refuses an answer whose nonce does not match the request, whose machine
+fingerprints do not match this host, or whose payload does not verify — so a captured reply from
+another deployment cannot be replayed here.
+
 ## Enforcing it
 
 ```python
@@ -79,6 +135,17 @@ Django takes `django_license_middleware(gate, open_prefixes)`; Flask takes
 Which paths stay open while unlicensed is the product's decision: a deployment has to reach its
 own license screen in order to stop being unlicensed.
 
+```mermaid
+flowchart LR
+    R[an HTTP request] --> F[the ASGI/WSGI gate<br/>is the deployment licensed at all?]
+    F -->|no, and the path is gated| X403[403 + the translated message]
+    F -->|yes, or the path is open| A[the feature dependency<br/>is this module licensed?]
+    A -->|no| X403
+    A -->|yes| Q[check_quota before creating<br/>is there room for one more?]
+    Q -->|no| X403
+    Q -->|yes| H[your view runs]
+```
+
 ## Turning a refusal into a response
 
 `LicenseDenied` carries `status`, `error_code`, `message_key`, `arguments`, and `http_status`,
@@ -98,6 +165,32 @@ async def handle(request, denied):
 ```
 
 Message keys and their argument order: [messages.md](messages.md).
+
+## Keeping it fresh
+
+A license that requires a heartbeat needs a scheduled refresh. The SDK writes the body and reads
+the answer; the schedule and the transport are yours.
+
+```python
+def refresh_license() -> None:
+    if not manager.gate.state().heartbeat_required:
+        return
+
+    request = manager.heartbeat_request()
+    response = httpx.post(
+        f"{manager.activation_server_url()}/api/heartbeats",
+        json=request.body,
+        headers={"X-Activation-Signature": request.signature},
+        timeout=20.0,
+    )
+    response.raise_for_status()
+
+    manager.store_record(manager.heartbeat_response(response.json()))
+    manager.verify(datetime.now(timezone.utc), integrity_ok=check_integrity())
+```
+
+A failed heartbeat is not an error the deployment has to act on immediately — the license stays
+usable until `heartbeatToleranceDays` passes. Log it and let the next run try again.
 
 ## Issuing
 
@@ -124,3 +217,13 @@ shown = keys.masked("ACPS", key)
 releases = ReleaseVersions()
 entitled = releases.is_within_ceiling("3.2.0", "3.2")
 ```
+
+## Before you ship
+
+- [ ] The verification key is packaged with the application, not read from a configurable path.
+- [ ] The prefixes that stay open while unlicensed reach your license screen and nothing else.
+- [ ] Every message key in [messages.md](messages.md) has a translation in every locale you ship.
+- [ ] A container mounts the host machine identifiers read-only, or activation fails with
+      `FINGERPRINT_UNAVAILABLE`.
+- [ ] The heartbeat schedule is shorter than `heartbeatIntervalDays`, so one missed run is not
+      immediately a lapse.
