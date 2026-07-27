@@ -3,8 +3,7 @@
 ## 가져다 쓰기
 
 ```
-pip install --extra-index-url https://accesscore-dev.github.io/accesscore-license-sdk-dist/packages/pypi/simple \
-    accesscore-license==1.0.0
+pip install https://github.com/accesscore-dev/accesscore-license-sdk-dist/releases/download/v1.0.0/accesscore_license-1.0.0-py3-none-any.whl
 ```
 
 네이티브 코어는 wheel 안에 플랫폼당 한 디렉터리로 담긴다. 공유 라이브러리의 출처를 자체 정책으로 고정한 배포는 `ACLIC_NATIVE_LIBRARY`로 파일을 지정한다 — 적재할 파일을 지정할 뿐 신뢰할 키를 지정하지 않는다.

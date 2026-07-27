@@ -5,7 +5,11 @@
 ```groovy
 repositories {
     maven {
-        url = uri('https://accesscore-dev.github.io/accesscore-license-sdk-dist/packages/maven')
+        url = uri('https://maven.pkg.github.com/accesscore-dev/accesscore-license-sdk-dist')
+        credentials {
+            username = providers.gradleProperty('gpr.user').orElse(providers.environmentVariable('GITHUB_USERNAME')).get()
+            password = providers.gradleProperty('gpr.token').orElse(providers.environmentVariable('GITHUB_TOKEN')).get()
+        }
         content { includeGroup 'dev.accesscore' }
     }
 }
@@ -15,13 +19,55 @@ dependencies {
 }
 ```
 
-For Maven:
+### The token
+
+The GitHub Packages registry asks every consumer to authenticate, public package or not. Create
+a classic token with the `read:packages` scope — and nothing else — at
+<https://github.com/settings/tokens/new?scopes=read:packages&description=accesscore-license-sdk>.
+
+Keep it out of the build file. Either `~/.gradle/gradle.properties`:
+
+```properties
+gpr.user=your-github-username
+gpr.token=ghp_xxxxxxxxxxxxxxxxxxxx
+```
+
+or the environment:
+
+```
+export GITHUB_USERNAME=your-github-username
+export GITHUB_TOKEN=ghp_xxxxxxxxxxxxxxxxxxxx
+```
+
+In CI, the workflow's own `GITHUB_TOKEN` already carries `read:packages`.
+
+### Maven
 
 ```xml
-<repository>
-  <id>accesscore</id>
-  <url>https://accesscore-dev.github.io/accesscore-license-sdk-dist/packages/maven</url>
-</repository>
+<repositories>
+  <repository>
+    <id>accesscore</id>
+    <url>https://maven.pkg.github.com/accesscore-dev/accesscore-license-sdk-dist</url>
+  </repository>
+</repositories>
+
+<dependency>
+  <groupId>dev.accesscore</groupId>
+  <artifactId>license-sdk</artifactId>
+  <version>1.0.0</version>
+</dependency>
+```
+
+with the credentials in `~/.m2/settings.xml`:
+
+```xml
+<servers>
+  <server>
+    <id>accesscore</id>
+    <username>your-github-username</username>
+    <password>ghp_xxxxxxxxxxxxxxxxxxxx</password>
+  </server>
+</servers>
 ```
 
 The native core travels inside the jar, one directory per platform, and is extracted to a

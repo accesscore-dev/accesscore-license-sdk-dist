@@ -16,34 +16,12 @@ Rust 코어가 라이선스를 서명하고 검증하며 배포물이 무엇을 
 
 ## 가져다 쓰기
 
-아래는 전부 공개다 — 계정도 토큰도 필요 없다. 코어가 각 패키지 안에 함께 들어가므로 애플리케이션 옆에 따로 설치할 것이 없다.
+코어가 각 패키지 안에 함께 들어가므로 애플리케이션 옆에 따로 설치할 것이 없다.
 
-**Java**
-
-```groovy
-repositories {
-    maven { url 'https://accesscore-dev.github.io/accesscore-license-sdk-dist/packages/maven' }
-}
-dependencies {
-    implementation 'dev.accesscore:license-sdk:1.0.0'
-}
-```
-
-**Python**
-
-```
-pip install --extra-index-url https://accesscore-dev.github.io/accesscore-license-sdk-dist/packages/pypi/simple \
-    accesscore-license==1.0.0
-```
-
-**Go**
-
-```
-go get github.com/accesscore-dev/accesscore-license-sdk-dist/packages/go@v1.0.0
-```
-
-| 언어 | 좌표 | 코어 전달 방식 |
+| 언어 | 받는 곳 | 토큰 |
 | --- | --- | --- |
-| Java | `dev.accesscore:license-sdk` | jar 안에 담고 실행 시 추출 |
-| Python | `accesscore-license` | wheel 안에 담음 |
-| Go | `github.com/accesscore-dev/accesscore-license-sdk-dist/packages/go` | 정적 링크 |
+| Java | GitHub Packages 레지스트리의 `dev.accesscore:license-sdk` | `read:packages` — [Java 가이드](java.md) 참고 |
+| Python | [릴리스](https://github.com/accesscore-dev/accesscore-license-sdk-dist/releases/tag/v1.0.0)에 붙은 wheel | 없음 |
+| Go | `github.com/accesscore-dev/accesscore-license-sdk-dist/packages/go` | 없음 |
+
+모든 언어의 산출물이 릴리스에 파일로도 붙는다 — jar, wheel, Go 모듈, 그리고 SDK가 지원하지 않는 언어를 C ABI로 직접 얹을 때 쓸 미리 빌드된 코어. 레지스트리에 닿을 수 없거나 닿고 싶지 않은 빌드는 파일을 가져간다.

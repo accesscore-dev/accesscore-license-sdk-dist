@@ -20,35 +20,14 @@ Start with concepts, then the guide for your language.
 
 ## Taking it
 
-Everything below is public — no account, no token. The core travels inside each package, so
-nothing has to be installed beside your application.
+The core travels inside each package, so nothing has to be installed beside your application.
 
-**Java**
-
-```groovy
-repositories {
-    maven { url 'https://accesscore-dev.github.io/accesscore-license-sdk-dist/packages/maven' }
-}
-dependencies {
-    implementation 'dev.accesscore:license-sdk:1.0.0'
-}
-```
-
-**Python**
-
-```
-pip install --extra-index-url https://accesscore-dev.github.io/accesscore-license-sdk-dist/packages/pypi/simple \
-    accesscore-license==1.0.0
-```
-
-**Go**
-
-```
-go get github.com/accesscore-dev/accesscore-license-sdk-dist/packages/go@v1.0.0
-```
-
-| Language | Coordinate | How the core travels |
+| Language | Where it comes from | Token |
 | --- | --- | --- |
-| Java | `dev.accesscore:license-sdk` | inside the jar, extracted at run time |
-| Python | `accesscore-license` | inside the wheel |
-| Go | `github.com/accesscore-dev/accesscore-license-sdk-dist/packages/go` | linked statically |
+| Java | `dev.accesscore:license-sdk`, from the GitHub Packages registry | `read:packages` — see [the Java guide](java.md) |
+| Python | the wheel on [the release](https://github.com/accesscore-dev/accesscore-license-sdk-dist/releases/tag/v1.0.0) | none |
+| Go | `github.com/accesscore-dev/accesscore-license-sdk-dist/packages/go` | none |
+
+Every language is also attached to the release as a file — the jar, the wheel, the Go module,
+and the prebuilt cores for binding the C ABI from a language the SDK does not cover. A build
+that cannot reach a registry, or would rather not, takes the file.

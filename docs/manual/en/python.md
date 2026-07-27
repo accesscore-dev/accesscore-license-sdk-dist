@@ -3,8 +3,7 @@
 ## Taking it
 
 ```
-pip install --extra-index-url https://accesscore-dev.github.io/accesscore-license-sdk-dist/packages/pypi/simple \
-    accesscore-license==1.0.0
+pip install https://github.com/accesscore-dev/accesscore-license-sdk-dist/releases/download/v1.0.0/accesscore_license-1.0.0-py3-none-any.whl
 ```
 
 The native core travels inside the wheel, one directory per platform. A deployment whose policy

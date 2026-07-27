@@ -5,7 +5,11 @@
 ```groovy
 repositories {
     maven {
-        url = uri('https://accesscore-dev.github.io/accesscore-license-sdk-dist/packages/maven')
+        url = uri('https://maven.pkg.github.com/accesscore-dev/accesscore-license-sdk-dist')
+        credentials {
+            username = providers.gradleProperty('gpr.user').orElse(providers.environmentVariable('GITHUB_USERNAME')).get()
+            password = providers.gradleProperty('gpr.token').orElse(providers.environmentVariable('GITHUB_TOKEN')).get()
+        }
         content { includeGroup 'dev.accesscore' }
     }
 }
@@ -15,13 +19,53 @@ dependencies {
 }
 ```
 
-For Maven:
+### 토큰
+
+GitHub Packages 레지스트리는 공개 패키지여도 모든 사용자에게 인증을 요구한다. `read:packages` 스코프만 가진 클래식 토큰을 <https://github.com/settings/tokens/new?scopes=read:packages&description=accesscore-license-sdk>에서 만든다.
+
+빌드 파일에 넣지 않는다. `~/.gradle/gradle.properties`에 두거나,
+
+```properties
+gpr.user=your-github-username
+gpr.token=ghp_xxxxxxxxxxxxxxxxxxxx
+```
+
+환경 변수로 준다.
+
+```
+export GITHUB_USERNAME=your-github-username
+export GITHUB_TOKEN=ghp_xxxxxxxxxxxxxxxxxxxx
+```
+
+CI에서는 워크플로우가 제공하는 `GITHUB_TOKEN`에 이미 `read:packages`가 들어 있다.
+
+### Maven
 
 ```xml
-<repository>
-  <id>accesscore</id>
-  <url>https://accesscore-dev.github.io/accesscore-license-sdk-dist/packages/maven</url>
-</repository>
+<repositories>
+  <repository>
+    <id>accesscore</id>
+    <url>https://maven.pkg.github.com/accesscore-dev/accesscore-license-sdk-dist</url>
+  </repository>
+</repositories>
+
+<dependency>
+  <groupId>dev.accesscore</groupId>
+  <artifactId>license-sdk</artifactId>
+  <version>1.0.0</version>
+</dependency>
+```
+
+자격 증명은 `~/.m2/settings.xml`에 둔다.
+
+```xml
+<servers>
+  <server>
+    <id>accesscore</id>
+    <username>your-github-username</username>
+    <password>ghp_xxxxxxxxxxxxxxxxxxxx</password>
+  </server>
+</servers>
 ```
 
 네이티브 코어는 jar 안에 플랫폼당 한 디렉터리로 담기고, 처음 필요할 때 임시 파일로 추출된다. 공유 라이브러리의 출처를 자체 정책으로 고정한 배포는 `-Daclic.native.library=<경로>`로 파일을 지정한다 — 적재할 파일을 지정할 뿐 신뢰할 키를 지정하지 않으므로 어떤 검사도 약화시키지 않는다.

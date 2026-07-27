@@ -4,37 +4,57 @@ Release **1.0.0**. A Rust core signs licenses, verifies them, and decides what a
 may do; Java, Python, and Go products take that decision through a thin binding. The core
 travels inside each package, so nothing has to be installed beside your application.
 
-Everything below is public — no account, no token.
-
 ## Java
+
+Published to the GitHub Packages registry of this repository. The registry asks every consumer
+to authenticate, public package or not, so the repository declaration carries a GitHub username
+and a token with the `read:packages` scope — a classic token from
+<https://github.com/settings/tokens/new?scopes=read:packages>, kept out of the build file.
 
 ```groovy
 repositories {
-    maven { url 'https://accesscore-dev.github.io/accesscore-license-sdk-dist/packages/maven' }
+    maven {
+        url = uri('https://maven.pkg.github.com/accesscore-dev/accesscore-license-sdk-dist')
+        credentials {
+            username = providers.gradleProperty('gpr.user').orElse(providers.environmentVariable('GITHUB_USERNAME')).get()
+            password = providers.gradleProperty('gpr.token').orElse(providers.environmentVariable('GITHUB_TOKEN')).get()
+        }
+        content { includeGroup 'dev.accesscore' }
+    }
 }
 dependencies {
     implementation 'dev.accesscore:license-sdk:1.0.0'
 }
 ```
 
+Put `gpr.user` and `gpr.token` in `~/.gradle/gradle.properties`, or set `GITHUB_USERNAME`
+and `GITHUB_TOKEN` in the environment. The full walkthrough, Maven included, is in
+[the manual](docs/manual/en/java.md).
+
 ## Python
 
+No token — the wheel is attached to [the release](https://github.com/accesscore-dev/accesscore-license-sdk-dist/releases/tag/v1.0.0).
+
 ```
-pip install --extra-index-url https://accesscore-dev.github.io/accesscore-license-sdk-dist/packages/pypi/simple accesscore-license==1.0.0
+pip install https://github.com/accesscore-dev/accesscore-license-sdk-dist/releases/download/v1.0.0/accesscore_license-1.0.0-py3-none-any.whl
 ```
 
 ## Go
+
+No token.
 
 ```
 go get github.com/accesscore-dev/accesscore-license-sdk-dist/packages/go@v1.0.0
 ```
 
+## Or take the file
+
+Every language is attached to [the release](https://github.com/accesscore-dev/accesscore-license-sdk-dist/releases/tag/v1.0.0): the jar, the wheel, the Go module, and the prebuilt cores for binding the C ABI directly.
+
 ## What is here
 
 | Path | What it is |
 | --- | --- |
-| `packages/maven` | The Java artifact, as a Maven repository |
-| `packages/pypi` | The Python wheel, as a simple index |
 | `packages/go` | The Go module, with the static core it links |
 | `native/include` | The C ABI, for binding a language the SDK does not |
 | `native/lib` | The prebuilt core, one directory per platform |
