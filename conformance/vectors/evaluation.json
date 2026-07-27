@@ -1,0 +1,683 @@
+{
+  "kind": "evaluation",
+  "about": "Every branch of the judgement, and the boundary on each side of it. A case here is one thing changed from the baseline, so a failure names the check that moved.",
+  "cases": [
+    {
+      "name": "a sound license",
+      "why": "the baseline every other case differs from by one thing",
+      "input": {
+        "keys": [
+          {
+            "kid": "acps-2026-01",
+            "alg": "Ed25519",
+            "publicKey": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAuq6EywEynLqF5pwwr0LTxBPuf5RJl0WyAk075Vk49Ig=\n-----END PUBLIC KEY-----\n"
+          }
+        ],
+        "storedRecord": {
+          "licenseToken": "eyJzY2hlbWFWZXJzaW9uIjoxLCJhbGciOiJFZDI1NTE5Iiwia2lkIjoiYWNwcy0yMDI2LTAxIiwibGljZW5zZUlkIjoibGljX2NvbmZvcm1hbmNlIiwiYWN0aXZhdGlvbklkIjoiYWN0X2NvbmZvcm1hbmNlIiwiY3VzdG9tZXJJZCI6ImN1c19jb25mb3JtYW5jZSIsImN1c3RvbWVyIjoiQ29uZm9ybWFuY2UiLCJjaGFubmVsIjoiUFJPRFVDVElPTiIsInByb2R1Y3RDb2RlIjoiQUNDRVNTQ09SRV9DT05GT1JNQU5DRSIsIm1heFJlbGVhc2UiOiIzLjIiLCJ0aWVyTGFiZWwiOiJFbnRlcnByaXNlIiwiaXNzdWVkQXQiOiIyMDI2LTA3LTI1VDAwOjAwOjAwWiIsImFjdGl2YXRlZEF0IjoiMjAyNi0wNy0yNVQwMDowMDowMFoiLCJleHBpcmVzQXQiOiIyMDI3LTA3LTI1VDAwOjAwOjAwWiIsImdyYWNlUGVyaW9kRGF5cyI6MzAsIm1hY2hpbmVGaW5nZXJwcmludHMiOlsic2hhMjU2OmY5YzhjN2RkY2YzZDVmNTY2ZmQ2NzlmNjVkYjVkY2FiNDQ0NjU5NGNmNWQ5OTJmZWVhZDU0MTZjYmMxM2UwNjIiLCJzaGEyNTY6MWZiMTQwNGE5NzM4ZDVlZDIxMDU4NTFlYTAzOTAzN2ZiMTg0ZTY3NTI0MTg0ODlhNjQ3NDUzNWQ0NDU1MDczNiJdLCJub25jZSI6ImNvbmZvcm1hbmNlLW5vbmNlIiwiZmVhdHVyZXMiOlsiQVRURU5EQU5DRSIsIlZJU0lUT1IiXSwibGltaXRzIjp7IlVTRVJTIjoyMDAsIlJFQURFUl9QT1JUUyI6MH0sImhlYXJ0YmVhdFJlcXVpcmVkIjpmYWxzZSwiaGVhcnRiZWF0SW50ZXJ2YWxEYXlzIjowLCJoZWFydGJlYXRUb2xlcmFuY2VEYXlzIjowLCJtZXRhZGF0YSI6eyJpc3N1ZXIiOiJBY2Nlc3NDT1JFIn19.h4gtQgHhh_8jQ0JiSdbOC87s3sEr2Mo6smndZwCszv09bACm34_DrCw3C_h15RwPEA5zg4RvSZkW1q7fe9ecAA"
+        },
+        "now": "2026-08-01T00:00:00Z",
+        "integrityOk": true,
+        "productCode": "ACCESSCORE_CONFORMANCE",
+        "productRelease": "3.2",
+        "collectedFingerprints": [
+          "sha256:f9c8c7ddcf3d5f566fd679f65db5dcab4446594cf5d992feead5416cbc13e062",
+          "sha256:1fb1404a9738d5ed2105851ea039037fb184e6752418489a6474535d44550736"
+        ]
+      },
+      "expect": {
+        "status": "VALID",
+        "usable": true,
+        "errorCode": "LICENSE_VALID",
+        "availableFeatures": [
+          "ATTENDANCE",
+          "VISITOR"
+        ]
+      }
+    },
+    {
+      "name": "an integrity check the host failed",
+      "why": "settled before anything else: a binary that is not what it should be is not asked what license it holds",
+      "input": {
+        "keys": [
+          {
+            "kid": "acps-2026-01",
+            "alg": "Ed25519",
+            "publicKey": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAuq6EywEynLqF5pwwr0LTxBPuf5RJl0WyAk075Vk49Ig=\n-----END PUBLIC KEY-----\n"
+          }
+        ],
+        "storedRecord": {
+          "licenseToken": "eyJzY2hlbWFWZXJzaW9uIjoxLCJhbGciOiJFZDI1NTE5Iiwia2lkIjoiYWNwcy0yMDI2LTAxIiwibGljZW5zZUlkIjoibGljX2NvbmZvcm1hbmNlIiwiYWN0aXZhdGlvbklkIjoiYWN0X2NvbmZvcm1hbmNlIiwiY3VzdG9tZXJJZCI6ImN1c19jb25mb3JtYW5jZSIsImN1c3RvbWVyIjoiQ29uZm9ybWFuY2UiLCJjaGFubmVsIjoiUFJPRFVDVElPTiIsInByb2R1Y3RDb2RlIjoiQUNDRVNTQ09SRV9DT05GT1JNQU5DRSIsIm1heFJlbGVhc2UiOiIzLjIiLCJ0aWVyTGFiZWwiOiJFbnRlcnByaXNlIiwiaXNzdWVkQXQiOiIyMDI2LTA3LTI1VDAwOjAwOjAwWiIsImFjdGl2YXRlZEF0IjoiMjAyNi0wNy0yNVQwMDowMDowMFoiLCJleHBpcmVzQXQiOiIyMDI3LTA3LTI1VDAwOjAwOjAwWiIsImdyYWNlUGVyaW9kRGF5cyI6MzAsIm1hY2hpbmVGaW5nZXJwcmludHMiOlsic2hhMjU2OmY5YzhjN2RkY2YzZDVmNTY2ZmQ2NzlmNjVkYjVkY2FiNDQ0NjU5NGNmNWQ5OTJmZWVhZDU0MTZjYmMxM2UwNjIiLCJzaGEyNTY6MWZiMTQwNGE5NzM4ZDVlZDIxMDU4NTFlYTAzOTAzN2ZiMTg0ZTY3NTI0MTg0ODlhNjQ3NDUzNWQ0NDU1MDczNiJdLCJub25jZSI6ImNvbmZvcm1hbmNlLW5vbmNlIiwiZmVhdHVyZXMiOlsiQVRURU5EQU5DRSIsIlZJU0lUT1IiXSwibGltaXRzIjp7IlVTRVJTIjoyMDAsIlJFQURFUl9QT1JUUyI6MH0sImhlYXJ0YmVhdFJlcXVpcmVkIjpmYWxzZSwiaGVhcnRiZWF0SW50ZXJ2YWxEYXlzIjowLCJoZWFydGJlYXRUb2xlcmFuY2VEYXlzIjowLCJtZXRhZGF0YSI6eyJpc3N1ZXIiOiJBY2Nlc3NDT1JFIn19.h4gtQgHhh_8jQ0JiSdbOC87s3sEr2Mo6smndZwCszv09bACm34_DrCw3C_h15RwPEA5zg4RvSZkW1q7fe9ecAA"
+        },
+        "now": "2026-08-01T00:00:00Z",
+        "integrityOk": false,
+        "productCode": "ACCESSCORE_CONFORMANCE",
+        "productRelease": "3.2",
+        "collectedFingerprints": [
+          "sha256:f9c8c7ddcf3d5f566fd679f65db5dcab4446594cf5d992feead5416cbc13e062",
+          "sha256:1fb1404a9738d5ed2105851ea039037fb184e6752418489a6474535d44550736"
+        ]
+      },
+      "expect": {
+        "status": "INTEGRITY_FAILED",
+        "usable": false,
+        "errorCode": "LICENSE_INTEGRITY_FAILED",
+        "availableFeatures": []
+      }
+    },
+    {
+      "name": "nothing registered",
+      "why": "no token to judge",
+      "input": {
+        "keys": [
+          {
+            "kid": "acps-2026-01",
+            "alg": "Ed25519",
+            "publicKey": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAuq6EywEynLqF5pwwr0LTxBPuf5RJl0WyAk075Vk49Ig=\n-----END PUBLIC KEY-----\n"
+          }
+        ],
+        "storedRecord": null,
+        "now": "2026-08-01T00:00:00Z",
+        "integrityOk": true,
+        "productCode": "ACCESSCORE_CONFORMANCE",
+        "productRelease": "3.2",
+        "collectedFingerprints": [
+          "sha256:f9c8c7ddcf3d5f566fd679f65db5dcab4446594cf5d992feead5416cbc13e062",
+          "sha256:1fb1404a9738d5ed2105851ea039037fb184e6752418489a6474535d44550736"
+        ]
+      },
+      "expect": {
+        "status": "NOT_ACTIVATED",
+        "usable": false,
+        "errorCode": "LICENSE_NOT_ACTIVATED",
+        "availableFeatures": []
+      }
+    },
+    {
+      "name": "a revoked activation",
+      "why": "the stamp is read before the token it revokes, so revocation outlives a restart",
+      "input": {
+        "keys": [
+          {
+            "kid": "acps-2026-01",
+            "alg": "Ed25519",
+            "publicKey": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAuq6EywEynLqF5pwwr0LTxBPuf5RJl0WyAk075Vk49Ig=\n-----END PUBLIC KEY-----\n"
+          }
+        ],
+        "storedRecord": {
+          "licenseToken": "eyJzY2hlbWFWZXJzaW9uIjoxLCJhbGciOiJFZDI1NTE5Iiwia2lkIjoiYWNwcy0yMDI2LTAxIiwibGljZW5zZUlkIjoibGljX2NvbmZvcm1hbmNlIiwiYWN0aXZhdGlvbklkIjoiYWN0X2NvbmZvcm1hbmNlIiwiY3VzdG9tZXJJZCI6ImN1c19jb25mb3JtYW5jZSIsImN1c3RvbWVyIjoiQ29uZm9ybWFuY2UiLCJjaGFubmVsIjoiUFJPRFVDVElPTiIsInByb2R1Y3RDb2RlIjoiQUNDRVNTQ09SRV9DT05GT1JNQU5DRSIsIm1heFJlbGVhc2UiOiIzLjIiLCJ0aWVyTGFiZWwiOiJFbnRlcnByaXNlIiwiaXNzdWVkQXQiOiIyMDI2LTA3LTI1VDAwOjAwOjAwWiIsImFjdGl2YXRlZEF0IjoiMjAyNi0wNy0yNVQwMDowMDowMFoiLCJleHBpcmVzQXQiOiIyMDI3LTA3LTI1VDAwOjAwOjAwWiIsImdyYWNlUGVyaW9kRGF5cyI6MzAsIm1hY2hpbmVGaW5nZXJwcmludHMiOlsic2hhMjU2OmY5YzhjN2RkY2YzZDVmNTY2ZmQ2NzlmNjVkYjVkY2FiNDQ0NjU5NGNmNWQ5OTJmZWVhZDU0MTZjYmMxM2UwNjIiLCJzaGEyNTY6MWZiMTQwNGE5NzM4ZDVlZDIxMDU4NTFlYTAzOTAzN2ZiMTg0ZTY3NTI0MTg0ODlhNjQ3NDUzNWQ0NDU1MDczNiJdLCJub25jZSI6ImNvbmZvcm1hbmNlLW5vbmNlIiwiZmVhdHVyZXMiOlsiQVRURU5EQU5DRSIsIlZJU0lUT1IiXSwibGltaXRzIjp7IlVTRVJTIjoyMDAsIlJFQURFUl9QT1JUUyI6MH0sImhlYXJ0YmVhdFJlcXVpcmVkIjpmYWxzZSwiaGVhcnRiZWF0SW50ZXJ2YWxEYXlzIjowLCJoZWFydGJlYXRUb2xlcmFuY2VEYXlzIjowLCJtZXRhZGF0YSI6eyJpc3N1ZXIiOiJBY2Nlc3NDT1JFIn19.h4gtQgHhh_8jQ0JiSdbOC87s3sEr2Mo6smndZwCszv09bACm34_DrCw3C_h15RwPEA5zg4RvSZkW1q7fe9ecAA",
+          "revokedAt": "2026-07-30T00:00:00Z"
+        },
+        "now": "2026-08-01T00:00:00Z",
+        "integrityOk": true,
+        "productCode": "ACCESSCORE_CONFORMANCE",
+        "productRelease": "3.2",
+        "collectedFingerprints": [
+          "sha256:f9c8c7ddcf3d5f566fd679f65db5dcab4446594cf5d992feead5416cbc13e062",
+          "sha256:1fb1404a9738d5ed2105851ea039037fb184e6752418489a6474535d44550736"
+        ]
+      },
+      "expect": {
+        "status": "REVOKED",
+        "usable": false,
+        "errorCode": "LICENSE_REVOKED",
+        "availableFeatures": []
+      }
+    },
+    {
+      "name": "a token that cannot be read",
+      "why": "held apart from a token in another schema: this one is damaged and has to be replaced from its source",
+      "input": {
+        "keys": [
+          {
+            "kid": "acps-2026-01",
+            "alg": "Ed25519",
+            "publicKey": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAuq6EywEynLqF5pwwr0LTxBPuf5RJl0WyAk075Vk49Ig=\n-----END PUBLIC KEY-----\n"
+          }
+        ],
+        "storedRecord": {
+          "licenseToken": "not-a-token"
+        },
+        "now": "2026-08-01T00:00:00Z",
+        "integrityOk": true,
+        "productCode": "ACCESSCORE_CONFORMANCE",
+        "productRelease": "3.2",
+        "collectedFingerprints": [
+          "sha256:f9c8c7ddcf3d5f566fd679f65db5dcab4446594cf5d992feead5416cbc13e062",
+          "sha256:1fb1404a9738d5ed2105851ea039037fb184e6752418489a6474535d44550736"
+        ]
+      },
+      "expect": {
+        "status": "NOT_LOADED",
+        "usable": false,
+        "errorCode": "LICENSE_NOT_LOADED",
+        "availableFeatures": []
+      }
+    },
+    {
+      "name": "a token in another schema",
+      "why": "read before the signature is computed: a format this deployment cannot read is not worth checking a signature over",
+      "input": {
+        "keys": [
+          {
+            "kid": "acps-2026-01",
+            "alg": "Ed25519",
+            "publicKey": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAuq6EywEynLqF5pwwr0LTxBPuf5RJl0WyAk075Vk49Ig=\n-----END PUBLIC KEY-----\n"
+          }
+        ],
+        "storedRecord": {
+          "licenseToken": "eyJzY2hlbWFWZXJzaW9uIjo5OX0.bm90LWEtc2lnbmF0dXJl"
+        },
+        "now": "2026-08-01T00:00:00Z",
+        "integrityOk": true,
+        "productCode": "ACCESSCORE_CONFORMANCE",
+        "productRelease": "3.2",
+        "collectedFingerprints": [
+          "sha256:f9c8c7ddcf3d5f566fd679f65db5dcab4446594cf5d992feead5416cbc13e062",
+          "sha256:1fb1404a9738d5ed2105851ea039037fb184e6752418489a6474535d44550736"
+        ]
+      },
+      "expect": {
+        "status": "SCHEMA_UNSUPPORTED",
+        "usable": false,
+        "errorCode": "LICENSE_SCHEMA_UNSUPPORTED",
+        "availableFeatures": []
+      }
+    },
+    {
+      "name": "no key for the token's kid",
+      "why": "a token naming a key this deployment does not carry is refused, never checked against whatever key is at hand",
+      "input": {
+        "keys": [],
+        "storedRecord": {
+          "licenseToken": "eyJzY2hlbWFWZXJzaW9uIjoxLCJhbGciOiJFZDI1NTE5Iiwia2lkIjoiYWNwcy0yMDI2LTAxIiwibGljZW5zZUlkIjoibGljX2NvbmZvcm1hbmNlIiwiYWN0aXZhdGlvbklkIjoiYWN0X2NvbmZvcm1hbmNlIiwiY3VzdG9tZXJJZCI6ImN1c19jb25mb3JtYW5jZSIsImN1c3RvbWVyIjoiQ29uZm9ybWFuY2UiLCJjaGFubmVsIjoiUFJPRFVDVElPTiIsInByb2R1Y3RDb2RlIjoiQUNDRVNTQ09SRV9DT05GT1JNQU5DRSIsIm1heFJlbGVhc2UiOiIzLjIiLCJ0aWVyTGFiZWwiOiJFbnRlcnByaXNlIiwiaXNzdWVkQXQiOiIyMDI2LTA3LTI1VDAwOjAwOjAwWiIsImFjdGl2YXRlZEF0IjoiMjAyNi0wNy0yNVQwMDowMDowMFoiLCJleHBpcmVzQXQiOiIyMDI3LTA3LTI1VDAwOjAwOjAwWiIsImdyYWNlUGVyaW9kRGF5cyI6MzAsIm1hY2hpbmVGaW5nZXJwcmludHMiOlsic2hhMjU2OmY5YzhjN2RkY2YzZDVmNTY2ZmQ2NzlmNjVkYjVkY2FiNDQ0NjU5NGNmNWQ5OTJmZWVhZDU0MTZjYmMxM2UwNjIiLCJzaGEyNTY6MWZiMTQwNGE5NzM4ZDVlZDIxMDU4NTFlYTAzOTAzN2ZiMTg0ZTY3NTI0MTg0ODlhNjQ3NDUzNWQ0NDU1MDczNiJdLCJub25jZSI6ImNvbmZvcm1hbmNlLW5vbmNlIiwiZmVhdHVyZXMiOlsiQVRURU5EQU5DRSIsIlZJU0lUT1IiXSwibGltaXRzIjp7IlVTRVJTIjoyMDAsIlJFQURFUl9QT1JUUyI6MH0sImhlYXJ0YmVhdFJlcXVpcmVkIjpmYWxzZSwiaGVhcnRiZWF0SW50ZXJ2YWxEYXlzIjowLCJoZWFydGJlYXRUb2xlcmFuY2VEYXlzIjowLCJtZXRhZGF0YSI6eyJpc3N1ZXIiOiJBY2Nlc3NDT1JFIn19.h4gtQgHhh_8jQ0JiSdbOC87s3sEr2Mo6smndZwCszv09bACm34_DrCw3C_h15RwPEA5zg4RvSZkW1q7fe9ecAA"
+        },
+        "now": "2026-08-01T00:00:00Z",
+        "integrityOk": true,
+        "productCode": "ACCESSCORE_CONFORMANCE",
+        "productRelease": "3.2",
+        "collectedFingerprints": [
+          "sha256:f9c8c7ddcf3d5f566fd679f65db5dcab4446594cf5d992feead5416cbc13e062",
+          "sha256:1fb1404a9738d5ed2105851ea039037fb184e6752418489a6474535d44550736"
+        ]
+      },
+      "expect": {
+        "status": "INVALID_SIGNATURE",
+        "usable": false,
+        "errorCode": "LICENSE_INVALID_SIGNATURE",
+        "availableFeatures": []
+      }
+    },
+    {
+      "name": "another product's license",
+      "why": "asked right after the signature and before the machine: if the token belongs to another product, whether the machine matches is not worth asking",
+      "input": {
+        "keys": [
+          {
+            "kid": "acps-2026-01",
+            "alg": "Ed25519",
+            "publicKey": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAuq6EywEynLqF5pwwr0LTxBPuf5RJl0WyAk075Vk49Ig=\n-----END PUBLIC KEY-----\n"
+          }
+        ],
+        "storedRecord": {
+          "licenseToken": "eyJzY2hlbWFWZXJzaW9uIjoxLCJhbGciOiJFZDI1NTE5Iiwia2lkIjoiYWNwcy0yMDI2LTAxIiwibGljZW5zZUlkIjoibGljX2NvbmZvcm1hbmNlIiwiYWN0aXZhdGlvbklkIjoiYWN0X2NvbmZvcm1hbmNlIiwiY3VzdG9tZXJJZCI6ImN1c19jb25mb3JtYW5jZSIsImN1c3RvbWVyIjoiQ29uZm9ybWFuY2UiLCJjaGFubmVsIjoiUFJPRFVDVElPTiIsInByb2R1Y3RDb2RlIjoiQUNDRVNTQ09SRV9DT05GT1JNQU5DRSIsIm1heFJlbGVhc2UiOiIzLjIiLCJ0aWVyTGFiZWwiOiJFbnRlcnByaXNlIiwiaXNzdWVkQXQiOiIyMDI2LTA3LTI1VDAwOjAwOjAwWiIsImFjdGl2YXRlZEF0IjoiMjAyNi0wNy0yNVQwMDowMDowMFoiLCJleHBpcmVzQXQiOiIyMDI3LTA3LTI1VDAwOjAwOjAwWiIsImdyYWNlUGVyaW9kRGF5cyI6MzAsIm1hY2hpbmVGaW5nZXJwcmludHMiOlsic2hhMjU2OmY5YzhjN2RkY2YzZDVmNTY2ZmQ2NzlmNjVkYjVkY2FiNDQ0NjU5NGNmNWQ5OTJmZWVhZDU0MTZjYmMxM2UwNjIiLCJzaGEyNTY6MWZiMTQwNGE5NzM4ZDVlZDIxMDU4NTFlYTAzOTAzN2ZiMTg0ZTY3NTI0MTg0ODlhNjQ3NDUzNWQ0NDU1MDczNiJdLCJub25jZSI6ImNvbmZvcm1hbmNlLW5vbmNlIiwiZmVhdHVyZXMiOlsiQVRURU5EQU5DRSIsIlZJU0lUT1IiXSwibGltaXRzIjp7IlVTRVJTIjoyMDAsIlJFQURFUl9QT1JUUyI6MH0sImhlYXJ0YmVhdFJlcXVpcmVkIjpmYWxzZSwiaGVhcnRiZWF0SW50ZXJ2YWxEYXlzIjowLCJoZWFydGJlYXRUb2xlcmFuY2VEYXlzIjowLCJtZXRhZGF0YSI6eyJpc3N1ZXIiOiJBY2Nlc3NDT1JFIn19.h4gtQgHhh_8jQ0JiSdbOC87s3sEr2Mo6smndZwCszv09bACm34_DrCw3C_h15RwPEA5zg4RvSZkW1q7fe9ecAA"
+        },
+        "now": "2026-08-01T00:00:00Z",
+        "integrityOk": true,
+        "productCode": "ACCESSCORE_OTHER",
+        "productRelease": "3.2",
+        "collectedFingerprints": [
+          "sha256:f9c8c7ddcf3d5f566fd679f65db5dcab4446594cf5d992feead5416cbc13e062",
+          "sha256:1fb1404a9738d5ed2105851ea039037fb184e6752418489a6474535d44550736"
+        ]
+      },
+      "expect": {
+        "status": "PRODUCT_MISMATCH",
+        "usable": false,
+        "errorCode": "LICENSE_PRODUCT_MISMATCH",
+        "availableFeatures": []
+      }
+    },
+    {
+      "name": "a machine the token does not name",
+      "why": "one of three collected matches, which is below half",
+      "input": {
+        "keys": [
+          {
+            "kid": "acps-2026-01",
+            "alg": "Ed25519",
+            "publicKey": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAuq6EywEynLqF5pwwr0LTxBPuf5RJl0WyAk075Vk49Ig=\n-----END PUBLIC KEY-----\n"
+          }
+        ],
+        "storedRecord": {
+          "licenseToken": "eyJzY2hlbWFWZXJzaW9uIjoxLCJhbGciOiJFZDI1NTE5Iiwia2lkIjoiYWNwcy0yMDI2LTAxIiwibGljZW5zZUlkIjoibGljX2NvbmZvcm1hbmNlIiwiYWN0aXZhdGlvbklkIjoiYWN0X2NvbmZvcm1hbmNlIiwiY3VzdG9tZXJJZCI6ImN1c19jb25mb3JtYW5jZSIsImN1c3RvbWVyIjoiQ29uZm9ybWFuY2UiLCJjaGFubmVsIjoiUFJPRFVDVElPTiIsInByb2R1Y3RDb2RlIjoiQUNDRVNTQ09SRV9DT05GT1JNQU5DRSIsIm1heFJlbGVhc2UiOiIzLjIiLCJ0aWVyTGFiZWwiOiJFbnRlcnByaXNlIiwiaXNzdWVkQXQiOiIyMDI2LTA3LTI1VDAwOjAwOjAwWiIsImFjdGl2YXRlZEF0IjoiMjAyNi0wNy0yNVQwMDowMDowMFoiLCJleHBpcmVzQXQiOiIyMDI3LTA3LTI1VDAwOjAwOjAwWiIsImdyYWNlUGVyaW9kRGF5cyI6MzAsIm1hY2hpbmVGaW5nZXJwcmludHMiOlsic2hhMjU2OmY5YzhjN2RkY2YzZDVmNTY2ZmQ2NzlmNjVkYjVkY2FiNDQ0NjU5NGNmNWQ5OTJmZWVhZDU0MTZjYmMxM2UwNjIiLCJzaGEyNTY6MWZiMTQwNGE5NzM4ZDVlZDIxMDU4NTFlYTAzOTAzN2ZiMTg0ZTY3NTI0MTg0ODlhNjQ3NDUzNWQ0NDU1MDczNiJdLCJub25jZSI6ImNvbmZvcm1hbmNlLW5vbmNlIiwiZmVhdHVyZXMiOlsiQVRURU5EQU5DRSIsIlZJU0lUT1IiXSwibGltaXRzIjp7IlVTRVJTIjoyMDAsIlJFQURFUl9QT1JUUyI6MH0sImhlYXJ0YmVhdFJlcXVpcmVkIjpmYWxzZSwiaGVhcnRiZWF0SW50ZXJ2YWxEYXlzIjowLCJoZWFydGJlYXRUb2xlcmFuY2VEYXlzIjowLCJtZXRhZGF0YSI6eyJpc3N1ZXIiOiJBY2Nlc3NDT1JFIn19.h4gtQgHhh_8jQ0JiSdbOC87s3sEr2Mo6smndZwCszv09bACm34_DrCw3C_h15RwPEA5zg4RvSZkW1q7fe9ecAA"
+        },
+        "now": "2026-08-01T00:00:00Z",
+        "integrityOk": true,
+        "productCode": "ACCESSCORE_CONFORMANCE",
+        "productRelease": "3.2",
+        "collectedFingerprints": [
+          "sha256:f9c8c7ddcf3d5f566fd679f65db5dcab4446594cf5d992feead5416cbc13e062",
+          "sha256:c77651cb336c070b88e3b5851851faf7a45edfae573c03271a014e9ce206e35e",
+          "sha256:4e464bc6bcfefcaa2efdaf6ddea83b83cd7dd61a53fb2f704402e9f2da70e3d3"
+        ]
+      },
+      "expect": {
+        "status": "MACHINE_MISMATCH",
+        "usable": false,
+        "errorCode": "LICENSE_MACHINE_MISMATCH",
+        "availableFeatures": []
+      }
+    },
+    {
+      "name": "a machine that reports nothing",
+      "why": "refused rather than waved through: without an identifier the binding cannot be checked at all",
+      "input": {
+        "keys": [
+          {
+            "kid": "acps-2026-01",
+            "alg": "Ed25519",
+            "publicKey": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAuq6EywEynLqF5pwwr0LTxBPuf5RJl0WyAk075Vk49Ig=\n-----END PUBLIC KEY-----\n"
+          }
+        ],
+        "storedRecord": {
+          "licenseToken": "eyJzY2hlbWFWZXJzaW9uIjoxLCJhbGciOiJFZDI1NTE5Iiwia2lkIjoiYWNwcy0yMDI2LTAxIiwibGljZW5zZUlkIjoibGljX2NvbmZvcm1hbmNlIiwiYWN0aXZhdGlvbklkIjoiYWN0X2NvbmZvcm1hbmNlIiwiY3VzdG9tZXJJZCI6ImN1c19jb25mb3JtYW5jZSIsImN1c3RvbWVyIjoiQ29uZm9ybWFuY2UiLCJjaGFubmVsIjoiUFJPRFVDVElPTiIsInByb2R1Y3RDb2RlIjoiQUNDRVNTQ09SRV9DT05GT1JNQU5DRSIsIm1heFJlbGVhc2UiOiIzLjIiLCJ0aWVyTGFiZWwiOiJFbnRlcnByaXNlIiwiaXNzdWVkQXQiOiIyMDI2LTA3LTI1VDAwOjAwOjAwWiIsImFjdGl2YXRlZEF0IjoiMjAyNi0wNy0yNVQwMDowMDowMFoiLCJleHBpcmVzQXQiOiIyMDI3LTA3LTI1VDAwOjAwOjAwWiIsImdyYWNlUGVyaW9kRGF5cyI6MzAsIm1hY2hpbmVGaW5nZXJwcmludHMiOlsic2hhMjU2OmY5YzhjN2RkY2YzZDVmNTY2ZmQ2NzlmNjVkYjVkY2FiNDQ0NjU5NGNmNWQ5OTJmZWVhZDU0MTZjYmMxM2UwNjIiLCJzaGEyNTY6MWZiMTQwNGE5NzM4ZDVlZDIxMDU4NTFlYTAzOTAzN2ZiMTg0ZTY3NTI0MTg0ODlhNjQ3NDUzNWQ0NDU1MDczNiJdLCJub25jZSI6ImNvbmZvcm1hbmNlLW5vbmNlIiwiZmVhdHVyZXMiOlsiQVRURU5EQU5DRSIsIlZJU0lUT1IiXSwibGltaXRzIjp7IlVTRVJTIjoyMDAsIlJFQURFUl9QT1JUUyI6MH0sImhlYXJ0YmVhdFJlcXVpcmVkIjpmYWxzZSwiaGVhcnRiZWF0SW50ZXJ2YWxEYXlzIjowLCJoZWFydGJlYXRUb2xlcmFuY2VEYXlzIjowLCJtZXRhZGF0YSI6eyJpc3N1ZXIiOiJBY2Nlc3NDT1JFIn19.h4gtQgHhh_8jQ0JiSdbOC87s3sEr2Mo6smndZwCszv09bACm34_DrCw3C_h15RwPEA5zg4RvSZkW1q7fe9ecAA"
+        },
+        "now": "2026-08-01T00:00:00Z",
+        "integrityOk": true,
+        "productCode": "ACCESSCORE_CONFORMANCE",
+        "productRelease": "3.2",
+        "collectedFingerprints": []
+      },
+      "expect": {
+        "status": "FINGERPRINT_UNAVAILABLE",
+        "usable": false,
+        "errorCode": "LICENSE_FINGERPRINT_UNAVAILABLE",
+        "availableFeatures": []
+      }
+    },
+    {
+      "name": "a container reading one identifier of two",
+      "why": "half of two is one, so a deployment that lost a mount keeps working",
+      "input": {
+        "keys": [
+          {
+            "kid": "acps-2026-01",
+            "alg": "Ed25519",
+            "publicKey": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAuq6EywEynLqF5pwwr0LTxBPuf5RJl0WyAk075Vk49Ig=\n-----END PUBLIC KEY-----\n"
+          }
+        ],
+        "storedRecord": {
+          "licenseToken": "eyJzY2hlbWFWZXJzaW9uIjoxLCJhbGciOiJFZDI1NTE5Iiwia2lkIjoiYWNwcy0yMDI2LTAxIiwibGljZW5zZUlkIjoibGljX2NvbmZvcm1hbmNlIiwiYWN0aXZhdGlvbklkIjoiYWN0X2NvbmZvcm1hbmNlIiwiY3VzdG9tZXJJZCI6ImN1c19jb25mb3JtYW5jZSIsImN1c3RvbWVyIjoiQ29uZm9ybWFuY2UiLCJjaGFubmVsIjoiUFJPRFVDVElPTiIsInByb2R1Y3RDb2RlIjoiQUNDRVNTQ09SRV9DT05GT1JNQU5DRSIsIm1heFJlbGVhc2UiOiIzLjIiLCJ0aWVyTGFiZWwiOiJFbnRlcnByaXNlIiwiaXNzdWVkQXQiOiIyMDI2LTA3LTI1VDAwOjAwOjAwWiIsImFjdGl2YXRlZEF0IjoiMjAyNi0wNy0yNVQwMDowMDowMFoiLCJleHBpcmVzQXQiOiIyMDI3LTA3LTI1VDAwOjAwOjAwWiIsImdyYWNlUGVyaW9kRGF5cyI6MzAsIm1hY2hpbmVGaW5nZXJwcmludHMiOlsic2hhMjU2OmY5YzhjN2RkY2YzZDVmNTY2ZmQ2NzlmNjVkYjVkY2FiNDQ0NjU5NGNmNWQ5OTJmZWVhZDU0MTZjYmMxM2UwNjIiLCJzaGEyNTY6MWZiMTQwNGE5NzM4ZDVlZDIxMDU4NTFlYTAzOTAzN2ZiMTg0ZTY3NTI0MTg0ODlhNjQ3NDUzNWQ0NDU1MDczNiJdLCJub25jZSI6ImNvbmZvcm1hbmNlLW5vbmNlIiwiZmVhdHVyZXMiOlsiQVRURU5EQU5DRSIsIlZJU0lUT1IiXSwibGltaXRzIjp7IlVTRVJTIjoyMDAsIlJFQURFUl9QT1JUUyI6MH0sImhlYXJ0YmVhdFJlcXVpcmVkIjpmYWxzZSwiaGVhcnRiZWF0SW50ZXJ2YWxEYXlzIjowLCJoZWFydGJlYXRUb2xlcmFuY2VEYXlzIjowLCJtZXRhZGF0YSI6eyJpc3N1ZXIiOiJBY2Nlc3NDT1JFIn19.h4gtQgHhh_8jQ0JiSdbOC87s3sEr2Mo6smndZwCszv09bACm34_DrCw3C_h15RwPEA5zg4RvSZkW1q7fe9ecAA"
+        },
+        "now": "2026-08-01T00:00:00Z",
+        "integrityOk": true,
+        "productCode": "ACCESSCORE_CONFORMANCE",
+        "productRelease": "3.2",
+        "collectedFingerprints": [
+          "sha256:1fb1404a9738d5ed2105851ea039037fb184e6752418489a6474535d44550736"
+        ]
+      },
+      "expect": {
+        "status": "VALID",
+        "usable": true,
+        "errorCode": "LICENSE_VALID",
+        "availableFeatures": [
+          "ATTENDANCE",
+          "VISITOR"
+        ]
+      }
+    },
+    {
+      "name": "the instant a license expires",
+      "why": "the expiry instant is still inside the window",
+      "input": {
+        "keys": [
+          {
+            "kid": "acps-2026-01",
+            "alg": "Ed25519",
+            "publicKey": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAuq6EywEynLqF5pwwr0LTxBPuf5RJl0WyAk075Vk49Ig=\n-----END PUBLIC KEY-----\n"
+          }
+        ],
+        "storedRecord": {
+          "licenseToken": "eyJzY2hlbWFWZXJzaW9uIjoxLCJhbGciOiJFZDI1NTE5Iiwia2lkIjoiYWNwcy0yMDI2LTAxIiwibGljZW5zZUlkIjoibGljX2NvbmZvcm1hbmNlIiwiYWN0aXZhdGlvbklkIjoiYWN0X2NvbmZvcm1hbmNlIiwiY3VzdG9tZXJJZCI6ImN1c19jb25mb3JtYW5jZSIsImN1c3RvbWVyIjoiQ29uZm9ybWFuY2UiLCJjaGFubmVsIjoiUFJPRFVDVElPTiIsInByb2R1Y3RDb2RlIjoiQUNDRVNTQ09SRV9DT05GT1JNQU5DRSIsIm1heFJlbGVhc2UiOiIzLjIiLCJ0aWVyTGFiZWwiOiJFbnRlcnByaXNlIiwiaXNzdWVkQXQiOiIyMDI2LTA3LTI1VDAwOjAwOjAwWiIsImFjdGl2YXRlZEF0IjoiMjAyNi0wNy0yNVQwMDowMDowMFoiLCJleHBpcmVzQXQiOiIyMDI3LTA3LTI1VDAwOjAwOjAwWiIsImdyYWNlUGVyaW9kRGF5cyI6MzAsIm1hY2hpbmVGaW5nZXJwcmludHMiOlsic2hhMjU2OmY5YzhjN2RkY2YzZDVmNTY2ZmQ2NzlmNjVkYjVkY2FiNDQ0NjU5NGNmNWQ5OTJmZWVhZDU0MTZjYmMxM2UwNjIiLCJzaGEyNTY6MWZiMTQwNGE5NzM4ZDVlZDIxMDU4NTFlYTAzOTAzN2ZiMTg0ZTY3NTI0MTg0ODlhNjQ3NDUzNWQ0NDU1MDczNiJdLCJub25jZSI6ImNvbmZvcm1hbmNlLW5vbmNlIiwiZmVhdHVyZXMiOlsiQVRURU5EQU5DRSIsIlZJU0lUT1IiXSwibGltaXRzIjp7IlVTRVJTIjoyMDAsIlJFQURFUl9QT1JUUyI6MH0sImhlYXJ0YmVhdFJlcXVpcmVkIjpmYWxzZSwiaGVhcnRiZWF0SW50ZXJ2YWxEYXlzIjowLCJoZWFydGJlYXRUb2xlcmFuY2VEYXlzIjowLCJtZXRhZGF0YSI6eyJpc3N1ZXIiOiJBY2Nlc3NDT1JFIn19.h4gtQgHhh_8jQ0JiSdbOC87s3sEr2Mo6smndZwCszv09bACm34_DrCw3C_h15RwPEA5zg4RvSZkW1q7fe9ecAA"
+        },
+        "now": "2027-07-25T00:00:00Z",
+        "integrityOk": true,
+        "productCode": "ACCESSCORE_CONFORMANCE",
+        "productRelease": "3.2",
+        "collectedFingerprints": [
+          "sha256:f9c8c7ddcf3d5f566fd679f65db5dcab4446594cf5d992feead5416cbc13e062",
+          "sha256:1fb1404a9738d5ed2105851ea039037fb184e6752418489a6474535d44550736"
+        ]
+      },
+      "expect": {
+        "status": "VALID",
+        "usable": true,
+        "errorCode": "LICENSE_VALID",
+        "availableFeatures": [
+          "ATTENDANCE",
+          "VISITOR"
+        ]
+      }
+    },
+    {
+      "name": "one second past expiry",
+      "why": "the grace period starts, and the deployment keeps serving while being told",
+      "input": {
+        "keys": [
+          {
+            "kid": "acps-2026-01",
+            "alg": "Ed25519",
+            "publicKey": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAuq6EywEynLqF5pwwr0LTxBPuf5RJl0WyAk075Vk49Ig=\n-----END PUBLIC KEY-----\n"
+          }
+        ],
+        "storedRecord": {
+          "licenseToken": "eyJzY2hlbWFWZXJzaW9uIjoxLCJhbGciOiJFZDI1NTE5Iiwia2lkIjoiYWNwcy0yMDI2LTAxIiwibGljZW5zZUlkIjoibGljX2NvbmZvcm1hbmNlIiwiYWN0aXZhdGlvbklkIjoiYWN0X2NvbmZvcm1hbmNlIiwiY3VzdG9tZXJJZCI6ImN1c19jb25mb3JtYW5jZSIsImN1c3RvbWVyIjoiQ29uZm9ybWFuY2UiLCJjaGFubmVsIjoiUFJPRFVDVElPTiIsInByb2R1Y3RDb2RlIjoiQUNDRVNTQ09SRV9DT05GT1JNQU5DRSIsIm1heFJlbGVhc2UiOiIzLjIiLCJ0aWVyTGFiZWwiOiJFbnRlcnByaXNlIiwiaXNzdWVkQXQiOiIyMDI2LTA3LTI1VDAwOjAwOjAwWiIsImFjdGl2YXRlZEF0IjoiMjAyNi0wNy0yNVQwMDowMDowMFoiLCJleHBpcmVzQXQiOiIyMDI3LTA3LTI1VDAwOjAwOjAwWiIsImdyYWNlUGVyaW9kRGF5cyI6MzAsIm1hY2hpbmVGaW5nZXJwcmludHMiOlsic2hhMjU2OmY5YzhjN2RkY2YzZDVmNTY2ZmQ2NzlmNjVkYjVkY2FiNDQ0NjU5NGNmNWQ5OTJmZWVhZDU0MTZjYmMxM2UwNjIiLCJzaGEyNTY6MWZiMTQwNGE5NzM4ZDVlZDIxMDU4NTFlYTAzOTAzN2ZiMTg0ZTY3NTI0MTg0ODlhNjQ3NDUzNWQ0NDU1MDczNiJdLCJub25jZSI6ImNvbmZvcm1hbmNlLW5vbmNlIiwiZmVhdHVyZXMiOlsiQVRURU5EQU5DRSIsIlZJU0lUT1IiXSwibGltaXRzIjp7IlVTRVJTIjoyMDAsIlJFQURFUl9QT1JUUyI6MH0sImhlYXJ0YmVhdFJlcXVpcmVkIjpmYWxzZSwiaGVhcnRiZWF0SW50ZXJ2YWxEYXlzIjowLCJoZWFydGJlYXRUb2xlcmFuY2VEYXlzIjowLCJtZXRhZGF0YSI6eyJpc3N1ZXIiOiJBY2Nlc3NDT1JFIn19.h4gtQgHhh_8jQ0JiSdbOC87s3sEr2Mo6smndZwCszv09bACm34_DrCw3C_h15RwPEA5zg4RvSZkW1q7fe9ecAA"
+        },
+        "now": "2027-07-25T00:00:01Z",
+        "integrityOk": true,
+        "productCode": "ACCESSCORE_CONFORMANCE",
+        "productRelease": "3.2",
+        "collectedFingerprints": [
+          "sha256:f9c8c7ddcf3d5f566fd679f65db5dcab4446594cf5d992feead5416cbc13e062",
+          "sha256:1fb1404a9738d5ed2105851ea039037fb184e6752418489a6474535d44550736"
+        ]
+      },
+      "expect": {
+        "status": "GRACE_PERIOD",
+        "usable": true,
+        "errorCode": "LICENSE_GRACE_PERIOD",
+        "availableFeatures": [
+          "ATTENDANCE",
+          "VISITOR"
+        ]
+      }
+    },
+    {
+      "name": "the last instant of the grace period",
+      "why": "thirty days after expiry is still inside it",
+      "input": {
+        "keys": [
+          {
+            "kid": "acps-2026-01",
+            "alg": "Ed25519",
+            "publicKey": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAuq6EywEynLqF5pwwr0LTxBPuf5RJl0WyAk075Vk49Ig=\n-----END PUBLIC KEY-----\n"
+          }
+        ],
+        "storedRecord": {
+          "licenseToken": "eyJzY2hlbWFWZXJzaW9uIjoxLCJhbGciOiJFZDI1NTE5Iiwia2lkIjoiYWNwcy0yMDI2LTAxIiwibGljZW5zZUlkIjoibGljX2NvbmZvcm1hbmNlIiwiYWN0aXZhdGlvbklkIjoiYWN0X2NvbmZvcm1hbmNlIiwiY3VzdG9tZXJJZCI6ImN1c19jb25mb3JtYW5jZSIsImN1c3RvbWVyIjoiQ29uZm9ybWFuY2UiLCJjaGFubmVsIjoiUFJPRFVDVElPTiIsInByb2R1Y3RDb2RlIjoiQUNDRVNTQ09SRV9DT05GT1JNQU5DRSIsIm1heFJlbGVhc2UiOiIzLjIiLCJ0aWVyTGFiZWwiOiJFbnRlcnByaXNlIiwiaXNzdWVkQXQiOiIyMDI2LTA3LTI1VDAwOjAwOjAwWiIsImFjdGl2YXRlZEF0IjoiMjAyNi0wNy0yNVQwMDowMDowMFoiLCJleHBpcmVzQXQiOiIyMDI3LTA3LTI1VDAwOjAwOjAwWiIsImdyYWNlUGVyaW9kRGF5cyI6MzAsIm1hY2hpbmVGaW5nZXJwcmludHMiOlsic2hhMjU2OmY5YzhjN2RkY2YzZDVmNTY2ZmQ2NzlmNjVkYjVkY2FiNDQ0NjU5NGNmNWQ5OTJmZWVhZDU0MTZjYmMxM2UwNjIiLCJzaGEyNTY6MWZiMTQwNGE5NzM4ZDVlZDIxMDU4NTFlYTAzOTAzN2ZiMTg0ZTY3NTI0MTg0ODlhNjQ3NDUzNWQ0NDU1MDczNiJdLCJub25jZSI6ImNvbmZvcm1hbmNlLW5vbmNlIiwiZmVhdHVyZXMiOlsiQVRURU5EQU5DRSIsIlZJU0lUT1IiXSwibGltaXRzIjp7IlVTRVJTIjoyMDAsIlJFQURFUl9QT1JUUyI6MH0sImhlYXJ0YmVhdFJlcXVpcmVkIjpmYWxzZSwiaGVhcnRiZWF0SW50ZXJ2YWxEYXlzIjowLCJoZWFydGJlYXRUb2xlcmFuY2VEYXlzIjowLCJtZXRhZGF0YSI6eyJpc3N1ZXIiOiJBY2Nlc3NDT1JFIn19.h4gtQgHhh_8jQ0JiSdbOC87s3sEr2Mo6smndZwCszv09bACm34_DrCw3C_h15RwPEA5zg4RvSZkW1q7fe9ecAA"
+        },
+        "now": "2027-08-24T00:00:00Z",
+        "integrityOk": true,
+        "productCode": "ACCESSCORE_CONFORMANCE",
+        "productRelease": "3.2",
+        "collectedFingerprints": [
+          "sha256:f9c8c7ddcf3d5f566fd679f65db5dcab4446594cf5d992feead5416cbc13e062",
+          "sha256:1fb1404a9738d5ed2105851ea039037fb184e6752418489a6474535d44550736"
+        ]
+      },
+      "expect": {
+        "status": "GRACE_PERIOD",
+        "usable": true,
+        "errorCode": "LICENSE_GRACE_PERIOD",
+        "availableFeatures": [
+          "ATTENDANCE",
+          "VISITOR"
+        ]
+      }
+    },
+    {
+      "name": "one second past the grace period",
+      "why": "settled here, without consulting a clock watermark or a heartbeat",
+      "input": {
+        "keys": [
+          {
+            "kid": "acps-2026-01",
+            "alg": "Ed25519",
+            "publicKey": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAuq6EywEynLqF5pwwr0LTxBPuf5RJl0WyAk075Vk49Ig=\n-----END PUBLIC KEY-----\n"
+          }
+        ],
+        "storedRecord": {
+          "licenseToken": "eyJzY2hlbWFWZXJzaW9uIjoxLCJhbGciOiJFZDI1NTE5Iiwia2lkIjoiYWNwcy0yMDI2LTAxIiwibGljZW5zZUlkIjoibGljX2NvbmZvcm1hbmNlIiwiYWN0aXZhdGlvbklkIjoiYWN0X2NvbmZvcm1hbmNlIiwiY3VzdG9tZXJJZCI6ImN1c19jb25mb3JtYW5jZSIsImN1c3RvbWVyIjoiQ29uZm9ybWFuY2UiLCJjaGFubmVsIjoiUFJPRFVDVElPTiIsInByb2R1Y3RDb2RlIjoiQUNDRVNTQ09SRV9DT05GT1JNQU5DRSIsIm1heFJlbGVhc2UiOiIzLjIiLCJ0aWVyTGFiZWwiOiJFbnRlcnByaXNlIiwiaXNzdWVkQXQiOiIyMDI2LTA3LTI1VDAwOjAwOjAwWiIsImFjdGl2YXRlZEF0IjoiMjAyNi0wNy0yNVQwMDowMDowMFoiLCJleHBpcmVzQXQiOiIyMDI3LTA3LTI1VDAwOjAwOjAwWiIsImdyYWNlUGVyaW9kRGF5cyI6MzAsIm1hY2hpbmVGaW5nZXJwcmludHMiOlsic2hhMjU2OmY5YzhjN2RkY2YzZDVmNTY2ZmQ2NzlmNjVkYjVkY2FiNDQ0NjU5NGNmNWQ5OTJmZWVhZDU0MTZjYmMxM2UwNjIiLCJzaGEyNTY6MWZiMTQwNGE5NzM4ZDVlZDIxMDU4NTFlYTAzOTAzN2ZiMTg0ZTY3NTI0MTg0ODlhNjQ3NDUzNWQ0NDU1MDczNiJdLCJub25jZSI6ImNvbmZvcm1hbmNlLW5vbmNlIiwiZmVhdHVyZXMiOlsiQVRURU5EQU5DRSIsIlZJU0lUT1IiXSwibGltaXRzIjp7IlVTRVJTIjoyMDAsIlJFQURFUl9QT1JUUyI6MH0sImhlYXJ0YmVhdFJlcXVpcmVkIjpmYWxzZSwiaGVhcnRiZWF0SW50ZXJ2YWxEYXlzIjowLCJoZWFydGJlYXRUb2xlcmFuY2VEYXlzIjowLCJtZXRhZGF0YSI6eyJpc3N1ZXIiOiJBY2Nlc3NDT1JFIn19.h4gtQgHhh_8jQ0JiSdbOC87s3sEr2Mo6smndZwCszv09bACm34_DrCw3C_h15RwPEA5zg4RvSZkW1q7fe9ecAA"
+        },
+        "now": "2027-08-24T00:00:01Z",
+        "integrityOk": true,
+        "productCode": "ACCESSCORE_CONFORMANCE",
+        "productRelease": "3.2",
+        "collectedFingerprints": [
+          "sha256:f9c8c7ddcf3d5f566fd679f65db5dcab4446594cf5d992feead5416cbc13e062",
+          "sha256:1fb1404a9738d5ed2105851ea039037fb184e6752418489a6474535d44550736"
+        ]
+      },
+      "expect": {
+        "status": "EXPIRED",
+        "usable": false,
+        "errorCode": "LICENSE_EXPIRED",
+        "availableFeatures": []
+      }
+    },
+    {
+      "name": "a development license past expiry",
+      "why": "the development channel has no grace period at all",
+      "input": {
+        "keys": [
+          {
+            "kid": "acps-2026-01",
+            "alg": "Ed25519",
+            "publicKey": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAuq6EywEynLqF5pwwr0LTxBPuf5RJl0WyAk075Vk49Ig=\n-----END PUBLIC KEY-----\n"
+          }
+        ],
+        "storedRecord": {
+          "licenseToken": "eyJzY2hlbWFWZXJzaW9uIjoxLCJhbGciOiJFZDI1NTE5Iiwia2lkIjoiYWNwcy0yMDI2LTAxIiwibGljZW5zZUlkIjoibGljX2NvbmZvcm1hbmNlIiwiYWN0aXZhdGlvbklkIjoiYWN0X2NvbmZvcm1hbmNlIiwiY3VzdG9tZXJJZCI6ImN1c19jb25mb3JtYW5jZSIsImN1c3RvbWVyIjoiQ29uZm9ybWFuY2UiLCJjaGFubmVsIjoiREVWIiwicHJvZHVjdENvZGUiOiJBQ0NFU1NDT1JFX0NPTkZPUk1BTkNFIiwibWF4UmVsZWFzZSI6IjMuMiIsInRpZXJMYWJlbCI6IkVudGVycHJpc2UiLCJpc3N1ZWRBdCI6IjIwMjYtMDctMjVUMDA6MDA6MDBaIiwiYWN0aXZhdGVkQXQiOiIyMDI2LTA3LTI1VDAwOjAwOjAwWiIsImV4cGlyZXNBdCI6IjIwMjctMDctMjVUMDA6MDA6MDBaIiwiZ3JhY2VQZXJpb2REYXlzIjozMCwibWFjaGluZUZpbmdlcnByaW50cyI6WyJzaGEyNTY6ZjljOGM3ZGRjZjNkNWY1NjZmZDY3OWY2NWRiNWRjYWI0NDQ2NTk0Y2Y1ZDk5MmZlZWFkNTQxNmNiYzEzZTA2MiIsInNoYTI1NjoxZmIxNDA0YTk3MzhkNWVkMjEwNTg1MWVhMDM5MDM3ZmIxODRlNjc1MjQxODQ4OWE2NDc0NTM1ZDQ0NTUwNzM2Il0sIm5vbmNlIjoiY29uZm9ybWFuY2Utbm9uY2UiLCJmZWF0dXJlcyI6WyJBVFRFTkRBTkNFIiwiVklTSVRPUiJdLCJsaW1pdHMiOnsiVVNFUlMiOjIwMCwiUkVBREVSX1BPUlRTIjowfSwiaGVhcnRiZWF0UmVxdWlyZWQiOmZhbHNlLCJoZWFydGJlYXRJbnRlcnZhbERheXMiOjAsImhlYXJ0YmVhdFRvbGVyYW5jZURheXMiOjAsIm1ldGFkYXRhIjp7Imlzc3VlciI6IkFjY2Vzc0NPUkUifX0.YFqLP2jAVuaAVsiSAsPGi0vVfQonlyccLbZ21_AqqyZjd44LuqEZrm3RzeJt6IymR-gF4fAXDF0yPh8DVFSCBA"
+        },
+        "now": "2027-07-25T00:00:01Z",
+        "integrityOk": true,
+        "productCode": "ACCESSCORE_CONFORMANCE",
+        "productRelease": "3.2",
+        "collectedFingerprints": [
+          "sha256:f9c8c7ddcf3d5f566fd679f65db5dcab4446594cf5d992feead5416cbc13e062",
+          "sha256:1fb1404a9738d5ed2105851ea039037fb184e6752418489a6474535d44550736"
+        ]
+      },
+      "expect": {
+        "status": "EXPIRED",
+        "usable": false,
+        "errorCode": "LICENSE_EXPIRED",
+        "availableFeatures": []
+      }
+    },
+    {
+      "name": "a release above the ceiling",
+      "why": "the deployment keeps serving — a closed door is not an entitlement control — and grants nothing",
+      "input": {
+        "keys": [
+          {
+            "kid": "acps-2026-01",
+            "alg": "Ed25519",
+            "publicKey": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAuq6EywEynLqF5pwwr0LTxBPuf5RJl0WyAk075Vk49Ig=\n-----END PUBLIC KEY-----\n"
+          }
+        ],
+        "storedRecord": {
+          "licenseToken": "eyJzY2hlbWFWZXJzaW9uIjoxLCJhbGciOiJFZDI1NTE5Iiwia2lkIjoiYWNwcy0yMDI2LTAxIiwibGljZW5zZUlkIjoibGljX2NvbmZvcm1hbmNlIiwiYWN0aXZhdGlvbklkIjoiYWN0X2NvbmZvcm1hbmNlIiwiY3VzdG9tZXJJZCI6ImN1c19jb25mb3JtYW5jZSIsImN1c3RvbWVyIjoiQ29uZm9ybWFuY2UiLCJjaGFubmVsIjoiUFJPRFVDVElPTiIsInByb2R1Y3RDb2RlIjoiQUNDRVNTQ09SRV9DT05GT1JNQU5DRSIsIm1heFJlbGVhc2UiOiIzLjIiLCJ0aWVyTGFiZWwiOiJFbnRlcnByaXNlIiwiaXNzdWVkQXQiOiIyMDI2LTA3LTI1VDAwOjAwOjAwWiIsImFjdGl2YXRlZEF0IjoiMjAyNi0wNy0yNVQwMDowMDowMFoiLCJleHBpcmVzQXQiOiIyMDI3LTA3LTI1VDAwOjAwOjAwWiIsImdyYWNlUGVyaW9kRGF5cyI6MzAsIm1hY2hpbmVGaW5nZXJwcmludHMiOlsic2hhMjU2OmY5YzhjN2RkY2YzZDVmNTY2ZmQ2NzlmNjVkYjVkY2FiNDQ0NjU5NGNmNWQ5OTJmZWVhZDU0MTZjYmMxM2UwNjIiLCJzaGEyNTY6MWZiMTQwNGE5NzM4ZDVlZDIxMDU4NTFlYTAzOTAzN2ZiMTg0ZTY3NTI0MTg0ODlhNjQ3NDUzNWQ0NDU1MDczNiJdLCJub25jZSI6ImNvbmZvcm1hbmNlLW5vbmNlIiwiZmVhdHVyZXMiOlsiQVRURU5EQU5DRSIsIlZJU0lUT1IiXSwibGltaXRzIjp7IlVTRVJTIjoyMDAsIlJFQURFUl9QT1JUUyI6MH0sImhlYXJ0YmVhdFJlcXVpcmVkIjpmYWxzZSwiaGVhcnRiZWF0SW50ZXJ2YWxEYXlzIjowLCJoZWFydGJlYXRUb2xlcmFuY2VEYXlzIjowLCJtZXRhZGF0YSI6eyJpc3N1ZXIiOiJBY2Nlc3NDT1JFIn19.h4gtQgHhh_8jQ0JiSdbOC87s3sEr2Mo6smndZwCszv09bACm34_DrCw3C_h15RwPEA5zg4RvSZkW1q7fe9ecAA"
+        },
+        "now": "2026-08-01T00:00:00Z",
+        "integrityOk": true,
+        "productCode": "ACCESSCORE_CONFORMANCE",
+        "productRelease": "3.2.1",
+        "collectedFingerprints": [
+          "sha256:f9c8c7ddcf3d5f566fd679f65db5dcab4446594cf5d992feead5416cbc13e062",
+          "sha256:1fb1404a9738d5ed2105851ea039037fb184e6752418489a6474535d44550736"
+        ]
+      },
+      "expect": {
+        "status": "RELEASE_NOT_ENTITLED",
+        "usable": true,
+        "errorCode": "LICENSE_RELEASE_NOT_ENTITLED",
+        "availableFeatures": []
+      }
+    },
+    {
+      "name": "a clock moved back past the watermark",
+      "why": "the only reason to move a clock back past a recorded watermark is to reach an expiry that has already passed",
+      "input": {
+        "keys": [
+          {
+            "kid": "acps-2026-01",
+            "alg": "Ed25519",
+            "publicKey": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAuq6EywEynLqF5pwwr0LTxBPuf5RJl0WyAk075Vk49Ig=\n-----END PUBLIC KEY-----\n"
+          }
+        ],
+        "storedRecord": {
+          "licenseToken": "eyJzY2hlbWFWZXJzaW9uIjoxLCJhbGciOiJFZDI1NTE5Iiwia2lkIjoiYWNwcy0yMDI2LTAxIiwibGljZW5zZUlkIjoibGljX2NvbmZvcm1hbmNlIiwiYWN0aXZhdGlvbklkIjoiYWN0X2NvbmZvcm1hbmNlIiwiY3VzdG9tZXJJZCI6ImN1c19jb25mb3JtYW5jZSIsImN1c3RvbWVyIjoiQ29uZm9ybWFuY2UiLCJjaGFubmVsIjoiUFJPRFVDVElPTiIsInByb2R1Y3RDb2RlIjoiQUNDRVNTQ09SRV9DT05GT1JNQU5DRSIsIm1heFJlbGVhc2UiOiIzLjIiLCJ0aWVyTGFiZWwiOiJFbnRlcnByaXNlIiwiaXNzdWVkQXQiOiIyMDI2LTA3LTI1VDAwOjAwOjAwWiIsImFjdGl2YXRlZEF0IjoiMjAyNi0wNy0yNVQwMDowMDowMFoiLCJleHBpcmVzQXQiOiIyMDI3LTA3LTI1VDAwOjAwOjAwWiIsImdyYWNlUGVyaW9kRGF5cyI6MzAsIm1hY2hpbmVGaW5nZXJwcmludHMiOlsic2hhMjU2OmY5YzhjN2RkY2YzZDVmNTY2ZmQ2NzlmNjVkYjVkY2FiNDQ0NjU5NGNmNWQ5OTJmZWVhZDU0MTZjYmMxM2UwNjIiLCJzaGEyNTY6MWZiMTQwNGE5NzM4ZDVlZDIxMDU4NTFlYTAzOTAzN2ZiMTg0ZTY3NTI0MTg0ODlhNjQ3NDUzNWQ0NDU1MDczNiJdLCJub25jZSI6ImNvbmZvcm1hbmNlLW5vbmNlIiwiZmVhdHVyZXMiOlsiQVRURU5EQU5DRSIsIlZJU0lUT1IiXSwibGltaXRzIjp7IlVTRVJTIjoyMDAsIlJFQURFUl9QT1JUUyI6MH0sImhlYXJ0YmVhdFJlcXVpcmVkIjpmYWxzZSwiaGVhcnRiZWF0SW50ZXJ2YWxEYXlzIjowLCJoZWFydGJlYXRUb2xlcmFuY2VEYXlzIjowLCJtZXRhZGF0YSI6eyJpc3N1ZXIiOiJBY2Nlc3NDT1JFIn19.h4gtQgHhh_8jQ0JiSdbOC87s3sEr2Mo6smndZwCszv09bACm34_DrCw3C_h15RwPEA5zg4RvSZkW1q7fe9ecAA",
+          "verificationWatermark": "2026-08-01T12:00:00Z"
+        },
+        "now": "2026-08-01T10:59:59Z",
+        "integrityOk": true,
+        "productCode": "ACCESSCORE_CONFORMANCE",
+        "productRelease": "3.2",
+        "collectedFingerprints": [
+          "sha256:f9c8c7ddcf3d5f566fd679f65db5dcab4446594cf5d992feead5416cbc13e062",
+          "sha256:1fb1404a9738d5ed2105851ea039037fb184e6752418489a6474535d44550736"
+        ]
+      },
+      "expect": {
+        "status": "CLOCK_TAMPERED",
+        "usable": false,
+        "errorCode": "LICENSE_CLOCK_TAMPERED",
+        "availableFeatures": []
+      }
+    },
+    {
+      "name": "ordinary drift inside the tolerance",
+      "why": "a clock corrected backwards by an hour has not been tampered with",
+      "input": {
+        "keys": [
+          {
+            "kid": "acps-2026-01",
+            "alg": "Ed25519",
+            "publicKey": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAuq6EywEynLqF5pwwr0LTxBPuf5RJl0WyAk075Vk49Ig=\n-----END PUBLIC KEY-----\n"
+          }
+        ],
+        "storedRecord": {
+          "licenseToken": "eyJzY2hlbWFWZXJzaW9uIjoxLCJhbGciOiJFZDI1NTE5Iiwia2lkIjoiYWNwcy0yMDI2LTAxIiwibGljZW5zZUlkIjoibGljX2NvbmZvcm1hbmNlIiwiYWN0aXZhdGlvbklkIjoiYWN0X2NvbmZvcm1hbmNlIiwiY3VzdG9tZXJJZCI6ImN1c19jb25mb3JtYW5jZSIsImN1c3RvbWVyIjoiQ29uZm9ybWFuY2UiLCJjaGFubmVsIjoiUFJPRFVDVElPTiIsInByb2R1Y3RDb2RlIjoiQUNDRVNTQ09SRV9DT05GT1JNQU5DRSIsIm1heFJlbGVhc2UiOiIzLjIiLCJ0aWVyTGFiZWwiOiJFbnRlcnByaXNlIiwiaXNzdWVkQXQiOiIyMDI2LTA3LTI1VDAwOjAwOjAwWiIsImFjdGl2YXRlZEF0IjoiMjAyNi0wNy0yNVQwMDowMDowMFoiLCJleHBpcmVzQXQiOiIyMDI3LTA3LTI1VDAwOjAwOjAwWiIsImdyYWNlUGVyaW9kRGF5cyI6MzAsIm1hY2hpbmVGaW5nZXJwcmludHMiOlsic2hhMjU2OmY5YzhjN2RkY2YzZDVmNTY2ZmQ2NzlmNjVkYjVkY2FiNDQ0NjU5NGNmNWQ5OTJmZWVhZDU0MTZjYmMxM2UwNjIiLCJzaGEyNTY6MWZiMTQwNGE5NzM4ZDVlZDIxMDU4NTFlYTAzOTAzN2ZiMTg0ZTY3NTI0MTg0ODlhNjQ3NDUzNWQ0NDU1MDczNiJdLCJub25jZSI6ImNvbmZvcm1hbmNlLW5vbmNlIiwiZmVhdHVyZXMiOlsiQVRURU5EQU5DRSIsIlZJU0lUT1IiXSwibGltaXRzIjp7IlVTRVJTIjoyMDAsIlJFQURFUl9QT1JUUyI6MH0sImhlYXJ0YmVhdFJlcXVpcmVkIjpmYWxzZSwiaGVhcnRiZWF0SW50ZXJ2YWxEYXlzIjowLCJoZWFydGJlYXRUb2xlcmFuY2VEYXlzIjowLCJtZXRhZGF0YSI6eyJpc3N1ZXIiOiJBY2Nlc3NDT1JFIn19.h4gtQgHhh_8jQ0JiSdbOC87s3sEr2Mo6smndZwCszv09bACm34_DrCw3C_h15RwPEA5zg4RvSZkW1q7fe9ecAA",
+          "verificationWatermark": "2026-08-01T12:00:00Z"
+        },
+        "now": "2026-08-01T11:00:00Z",
+        "integrityOk": true,
+        "productCode": "ACCESSCORE_CONFORMANCE",
+        "productRelease": "3.2",
+        "collectedFingerprints": [
+          "sha256:f9c8c7ddcf3d5f566fd679f65db5dcab4446594cf5d992feead5416cbc13e062",
+          "sha256:1fb1404a9738d5ed2105851ea039037fb184e6752418489a6474535d44550736"
+        ]
+      },
+      "expect": {
+        "status": "VALID",
+        "usable": true,
+        "errorCode": "LICENSE_VALID",
+        "availableFeatures": [
+          "ATTENDANCE",
+          "VISITOR"
+        ]
+      }
+    },
+    {
+      "name": "a heartbeat on its deadline",
+      "why": "the deadline instant is still in time",
+      "input": {
+        "keys": [
+          {
+            "kid": "acps-2026-01",
+            "alg": "Ed25519",
+            "publicKey": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAuq6EywEynLqF5pwwr0LTxBPuf5RJl0WyAk075Vk49Ig=\n-----END PUBLIC KEY-----\n"
+          }
+        ],
+        "storedRecord": {
+          "licenseToken": "eyJzY2hlbWFWZXJzaW9uIjoxLCJhbGciOiJFZDI1NTE5Iiwia2lkIjoiYWNwcy0yMDI2LTAxIiwibGljZW5zZUlkIjoibGljX2NvbmZvcm1hbmNlIiwiYWN0aXZhdGlvbklkIjoiYWN0X2NvbmZvcm1hbmNlIiwiY3VzdG9tZXJJZCI6ImN1c19jb25mb3JtYW5jZSIsImN1c3RvbWVyIjoiQ29uZm9ybWFuY2UiLCJjaGFubmVsIjoiUFJPRFVDVElPTiIsInByb2R1Y3RDb2RlIjoiQUNDRVNTQ09SRV9DT05GT1JNQU5DRSIsIm1heFJlbGVhc2UiOiIzLjIiLCJ0aWVyTGFiZWwiOiJFbnRlcnByaXNlIiwiaXNzdWVkQXQiOiIyMDI2LTA3LTI1VDAwOjAwOjAwWiIsImFjdGl2YXRlZEF0IjoiMjAyNi0wNy0yNVQwMDowMDowMFoiLCJleHBpcmVzQXQiOiIyMDI3LTA3LTI1VDAwOjAwOjAwWiIsImdyYWNlUGVyaW9kRGF5cyI6MzAsIm1hY2hpbmVGaW5nZXJwcmludHMiOlsic2hhMjU2OmY5YzhjN2RkY2YzZDVmNTY2ZmQ2NzlmNjVkYjVkY2FiNDQ0NjU5NGNmNWQ5OTJmZWVhZDU0MTZjYmMxM2UwNjIiLCJzaGEyNTY6MWZiMTQwNGE5NzM4ZDVlZDIxMDU4NTFlYTAzOTAzN2ZiMTg0ZTY3NTI0MTg0ODlhNjQ3NDUzNWQ0NDU1MDczNiJdLCJub25jZSI6ImNvbmZvcm1hbmNlLW5vbmNlIiwiZmVhdHVyZXMiOlsiQVRURU5EQU5DRSIsIlZJU0lUT1IiXSwibGltaXRzIjp7IlVTRVJTIjoyMDAsIlJFQURFUl9QT1JUUyI6MH0sImhlYXJ0YmVhdFJlcXVpcmVkIjp0cnVlLCJoZWFydGJlYXRJbnRlcnZhbERheXMiOjcsImhlYXJ0YmVhdFRvbGVyYW5jZURheXMiOjIxLCJtZXRhZGF0YSI6eyJpc3N1ZXIiOiJBY2Nlc3NDT1JFIn19.HlOHwxqo_eXQOmwEgHsb36VWy9n5RKM5EmMpD12NwmaO9me9aSGq26aJIBz-QtHc8yAM3i75GmH05MTewHQDDg",
+          "lastHeartbeatAt": "2026-07-26T00:00:00Z"
+        },
+        "now": "2026-08-16T00:00:00Z",
+        "integrityOk": true,
+        "productCode": "ACCESSCORE_CONFORMANCE",
+        "productRelease": "3.2",
+        "collectedFingerprints": [
+          "sha256:f9c8c7ddcf3d5f566fd679f65db5dcab4446594cf5d992feead5416cbc13e062",
+          "sha256:1fb1404a9738d5ed2105851ea039037fb184e6752418489a6474535d44550736"
+        ]
+      },
+      "expect": {
+        "status": "VALID",
+        "usable": true,
+        "errorCode": "LICENSE_VALID",
+        "availableFeatures": [
+          "ATTENDANCE",
+          "VISITOR"
+        ]
+      }
+    },
+    {
+      "name": "a heartbeat one second late",
+      "why": "the tolerance is the wider of the two windows, and past it the license denies",
+      "input": {
+        "keys": [
+          {
+            "kid": "acps-2026-01",
+            "alg": "Ed25519",
+            "publicKey": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAuq6EywEynLqF5pwwr0LTxBPuf5RJl0WyAk075Vk49Ig=\n-----END PUBLIC KEY-----\n"
+          }
+        ],
+        "storedRecord": {
+          "licenseToken": "eyJzY2hlbWFWZXJzaW9uIjoxLCJhbGciOiJFZDI1NTE5Iiwia2lkIjoiYWNwcy0yMDI2LTAxIiwibGljZW5zZUlkIjoibGljX2NvbmZvcm1hbmNlIiwiYWN0aXZhdGlvbklkIjoiYWN0X2NvbmZvcm1hbmNlIiwiY3VzdG9tZXJJZCI6ImN1c19jb25mb3JtYW5jZSIsImN1c3RvbWVyIjoiQ29uZm9ybWFuY2UiLCJjaGFubmVsIjoiUFJPRFVDVElPTiIsInByb2R1Y3RDb2RlIjoiQUNDRVNTQ09SRV9DT05GT1JNQU5DRSIsIm1heFJlbGVhc2UiOiIzLjIiLCJ0aWVyTGFiZWwiOiJFbnRlcnByaXNlIiwiaXNzdWVkQXQiOiIyMDI2LTA3LTI1VDAwOjAwOjAwWiIsImFjdGl2YXRlZEF0IjoiMjAyNi0wNy0yNVQwMDowMDowMFoiLCJleHBpcmVzQXQiOiIyMDI3LTA3LTI1VDAwOjAwOjAwWiIsImdyYWNlUGVyaW9kRGF5cyI6MzAsIm1hY2hpbmVGaW5nZXJwcmludHMiOlsic2hhMjU2OmY5YzhjN2RkY2YzZDVmNTY2ZmQ2NzlmNjVkYjVkY2FiNDQ0NjU5NGNmNWQ5OTJmZWVhZDU0MTZjYmMxM2UwNjIiLCJzaGEyNTY6MWZiMTQwNGE5NzM4ZDVlZDIxMDU4NTFlYTAzOTAzN2ZiMTg0ZTY3NTI0MTg0ODlhNjQ3NDUzNWQ0NDU1MDczNiJdLCJub25jZSI6ImNvbmZvcm1hbmNlLW5vbmNlIiwiZmVhdHVyZXMiOlsiQVRURU5EQU5DRSIsIlZJU0lUT1IiXSwibGltaXRzIjp7IlVTRVJTIjoyMDAsIlJFQURFUl9QT1JUUyI6MH0sImhlYXJ0YmVhdFJlcXVpcmVkIjp0cnVlLCJoZWFydGJlYXRJbnRlcnZhbERheXMiOjcsImhlYXJ0YmVhdFRvbGVyYW5jZURheXMiOjIxLCJtZXRhZGF0YSI6eyJpc3N1ZXIiOiJBY2Nlc3NDT1JFIn19.HlOHwxqo_eXQOmwEgHsb36VWy9n5RKM5EmMpD12NwmaO9me9aSGq26aJIBz-QtHc8yAM3i75GmH05MTewHQDDg",
+          "lastHeartbeatAt": "2026-07-26T00:00:00Z"
+        },
+        "now": "2026-08-16T00:00:01Z",
+        "integrityOk": true,
+        "productCode": "ACCESSCORE_CONFORMANCE",
+        "productRelease": "3.2",
+        "collectedFingerprints": [
+          "sha256:f9c8c7ddcf3d5f566fd679f65db5dcab4446594cf5d992feead5416cbc13e062",
+          "sha256:1fb1404a9738d5ed2105851ea039037fb184e6752418489a6474535d44550736"
+        ]
+      },
+      "expect": {
+        "status": "HEARTBEAT_OVERDUE",
+        "usable": false,
+        "errorCode": "LICENSE_HEARTBEAT_OVERDUE",
+        "availableFeatures": []
+      }
+    },
+    {
+      "name": "a development license on any machine",
+      "why": "a wildcard binding is what makes a development license portable, and it is accepted on that channel only",
+      "input": {
+        "keys": [
+          {
+            "kid": "acps-2026-01",
+            "alg": "Ed25519",
+            "publicKey": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAuq6EywEynLqF5pwwr0LTxBPuf5RJl0WyAk075Vk49Ig=\n-----END PUBLIC KEY-----\n"
+          }
+        ],
+        "storedRecord": {
+          "licenseToken": "eyJzY2hlbWFWZXJzaW9uIjoxLCJhbGciOiJFZDI1NTE5Iiwia2lkIjoiYWNwcy0yMDI2LTAxIiwibGljZW5zZUlkIjoibGljX2NvbmZvcm1hbmNlIiwiYWN0aXZhdGlvbklkIjoiYWN0X2NvbmZvcm1hbmNlIiwiY3VzdG9tZXJJZCI6ImN1c19jb25mb3JtYW5jZSIsImN1c3RvbWVyIjoiQ29uZm9ybWFuY2UiLCJjaGFubmVsIjoiREVWIiwicHJvZHVjdENvZGUiOiJBQ0NFU1NDT1JFX0NPTkZPUk1BTkNFIiwibWF4UmVsZWFzZSI6IjMuMiIsInRpZXJMYWJlbCI6IkVudGVycHJpc2UiLCJpc3N1ZWRBdCI6IjIwMjYtMDctMjVUMDA6MDA6MDBaIiwiYWN0aXZhdGVkQXQiOiIyMDI2LTA3LTI1VDAwOjAwOjAwWiIsImV4cGlyZXNBdCI6IjIwMjctMDctMjVUMDA6MDA6MDBaIiwiZ3JhY2VQZXJpb2REYXlzIjozMCwibWFjaGluZUZpbmdlcnByaW50cyI6WyIqIl0sIm5vbmNlIjoiY29uZm9ybWFuY2Utbm9uY2UiLCJmZWF0dXJlcyI6WyJBVFRFTkRBTkNFIiwiVklTSVRPUiJdLCJsaW1pdHMiOnsiVVNFUlMiOjIwMCwiUkVBREVSX1BPUlRTIjowfSwiaGVhcnRiZWF0UmVxdWlyZWQiOmZhbHNlLCJoZWFydGJlYXRJbnRlcnZhbERheXMiOjAsImhlYXJ0YmVhdFRvbGVyYW5jZURheXMiOjAsIm1ldGFkYXRhIjp7Imlzc3VlciI6IkFjY2Vzc0NPUkUifX0.5J76Z8ToC-vpJpi8xorQr7pSpnIbEv8Qd_mm-Q1JDCTj16Ce2X1UnhDD4f_wPiTkiHywkLW6F_tkXuoPxZitAQ"
+        },
+        "now": "2026-08-01T00:00:00Z",
+        "integrityOk": true,
+        "productCode": "ACCESSCORE_CONFORMANCE",
+        "productRelease": "3.2",
+        "collectedFingerprints": [
+          "sha256:77c8481e5e7c99e580402d214371555dfda4820a21b5f2a36ca1ccfd5f27be2c"
+        ]
+      },
+      "expect": {
+        "status": "VALID",
+        "usable": true,
+        "errorCode": "LICENSE_VALID",
+        "availableFeatures": [
+          "ATTENDANCE",
+          "VISITOR"
+        ]
+      }
+    }
+  ]
+}

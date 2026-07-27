@@ -1,0 +1,230 @@
+{
+  "kind": "release",
+  "about": "How release versions rank, and what a contract ceiling entitles. The issuing side and the deployment both decide entitlement with this comparison, so a disagreement here is a disagreement about what was sold.",
+  "cases": [
+    {
+      "name": "compare 3.2 to 3.2.0",
+      "why": "a missing segment counts as zero, so these are one release",
+      "input": {
+        "operation": "COMPARE",
+        "version": "3.2",
+        "other": "3.2.0"
+      },
+      "expect": {
+        "result": 0
+      }
+    },
+    {
+      "name": "compare 3.2.0.0 to 3.2",
+      "why": "trailing zero segments do not make a later release",
+      "input": {
+        "operation": "COMPARE",
+        "version": "3.2.0.0",
+        "other": "3.2"
+      },
+      "expect": {
+        "result": 0
+      }
+    },
+    {
+      "name": "compare 3.10 to 3.2",
+      "why": "numeric segments rank as numbers, not as text",
+      "input": {
+        "operation": "COMPARE",
+        "version": "3.10",
+        "other": "3.2"
+      },
+      "expect": {
+        "result": 1
+      }
+    },
+    {
+      "name": "compare 3.2 to 3.10",
+      "why": "the same comparison read the other way",
+      "input": {
+        "operation": "COMPARE",
+        "version": "3.2",
+        "other": "3.10"
+      },
+      "expect": {
+        "result": -1
+      }
+    },
+    {
+      "name": "compare 3.2.0-rc1 to 3.2.0",
+      "why": "a segment that is not a number ranks lexically, above its base",
+      "input": {
+        "operation": "COMPARE",
+        "version": "3.2.0-rc1",
+        "other": "3.2.0"
+      },
+      "expect": {
+        "result": 1
+      }
+    },
+    {
+      "name": "compare 3.2.0 to 3.2.1",
+      "why": "sharing a prefix does not make two versions equal",
+      "input": {
+        "operation": "COMPARE",
+        "version": "3.2.0",
+        "other": "3.2.1"
+      },
+      "expect": {
+        "result": -1
+      }
+    },
+    {
+      "name": "compare  to 0",
+      "why": "a blank version is the lowest release there is",
+      "input": {
+        "operation": "COMPARE",
+        "version": "",
+        "other": "0"
+      },
+      "expect": {
+        "result": 0
+      }
+    },
+    {
+      "name": "compare  to 0.0.1",
+      "why": "and it ranks below anything above zero",
+      "input": {
+        "operation": "COMPARE",
+        "version": "",
+        "other": "0.0.1"
+      },
+      "expect": {
+        "result": -1
+      }
+    },
+    {
+      "name": "compare 10.0 to 9.9.9",
+      "why": "two digits do not rank below one",
+      "input": {
+        "operation": "COMPARE",
+        "version": "10.0",
+        "other": "9.9.9"
+      },
+      "expect": {
+        "result": 1
+      }
+    },
+    {
+      "name": "compare 1234567890123456789 to 999",
+      "why": "a segment too long to read as a number ranks lexically",
+      "input": {
+        "operation": "COMPARE",
+        "version": "1234567890123456789",
+        "other": "999"
+      },
+      "expect": {
+        "result": -1
+      }
+    },
+    {
+      "name": "3.2.0 under ceiling Some(\"3.2\")",
+      "why": "a release at the ceiling is entitled",
+      "input": {
+        "operation": "WITHIN_CEILING",
+        "version": "3.2.0",
+        "other": "3.2"
+      },
+      "expect": {
+        "result": true
+      }
+    },
+    {
+      "name": "3.2.1 under ceiling Some(\"3.2\")",
+      "why": "a patch above the ceiling is not: the line was not sold",
+      "input": {
+        "operation": "WITHIN_CEILING",
+        "version": "3.2.1",
+        "other": "3.2"
+      },
+      "expect": {
+        "result": false
+      }
+    },
+    {
+      "name": "9.9.9 under ceiling None",
+      "why": "no ceiling entitles everything",
+      "input": {
+        "operation": "WITHIN_CEILING",
+        "version": "9.9.9",
+        "other": null
+      },
+      "expect": {
+        "result": true
+      }
+    },
+    {
+      "name": "9.9.9 under ceiling Some(\"  \")",
+      "why": "a blank ceiling is no ceiling",
+      "input": {
+        "operation": "WITHIN_CEILING",
+        "version": "9.9.9",
+        "other": "  "
+      },
+      "expect": {
+        "result": true
+      }
+    },
+    {
+      "name": "3.1 under ceiling Some(\"3.2\")",
+      "why": "anything below the ceiling is entitled",
+      "input": {
+        "operation": "WITHIN_CEILING",
+        "version": "3.1",
+        "other": "3.2"
+      },
+      "expect": {
+        "result": true
+      }
+    },
+    {
+      "name": "sort key of 3.2",
+      "why": "short versions pad out to four segments",
+      "input": {
+        "operation": "SORT_KEY",
+        "version": "3.2"
+      },
+      "expect": {
+        "result": "0000000003.0000000002.0000000000.0000000000"
+      }
+    },
+    {
+      "name": "sort key of 3.2.0",
+      "why": "so 3.2 and 3.2.0 produce one key",
+      "input": {
+        "operation": "SORT_KEY",
+        "version": "3.2.0"
+      },
+      "expect": {
+        "result": "0000000003.0000000002.0000000000.0000000000"
+      }
+    },
+    {
+      "name": "sort key of 3.10",
+      "why": "padding is what makes a text sort rank 3.10 above 3.2",
+      "input": {
+        "operation": "SORT_KEY",
+        "version": "3.10"
+      },
+      "expect": {
+        "result": "0000000003.0000000010.0000000000.0000000000"
+      }
+    },
+    {
+      "name": "sort key of 3.2.0-rc1",
+      "why": "a pre-release suffix stays beside its base",
+      "input": {
+        "operation": "SORT_KEY",
+        "version": "3.2.0-rc1"
+      },
+      "expect": {
+        "result": "0000000003.0000000002.0000000000-rc1.0000000000"
+      }
+    }
+  ]
+}

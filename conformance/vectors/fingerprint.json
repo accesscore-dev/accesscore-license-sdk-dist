@@ -1,0 +1,275 @@
+{
+  "kind": "fingerprint",
+  "about": "Turning hardware identifiers into fingerprints, and deciding whether what a machine reports describes the machine a license names. The threshold is measured against what was collected, not against what was stamped.",
+  "cases": [
+    {
+      "name": "hash [\"4c4c4544-0032\"]",
+      "why": "one identifier hashes to one fingerprint",
+      "input": {
+        "operation": "HASH",
+        "identifiers": [
+          "4c4c4544-0032"
+        ]
+      },
+      "expect": {
+        "fingerprints": [
+          "sha256:fad96dfebfcee122eaa3c95e785853ebd59764a70c6869cb82ff8fbfee3a1020"
+        ]
+      }
+    },
+    {
+      "name": "hash [\"  4C4C4544-0032  \"]",
+      "why": "case and surrounding whitespace do not make a different machine",
+      "input": {
+        "operation": "HASH",
+        "identifiers": [
+          "  4C4C4544-0032  "
+        ]
+      },
+      "expect": {
+        "fingerprints": [
+          "sha256:fad96dfebfcee122eaa3c95e785853ebd59764a70c6869cb82ff8fbfee3a1020"
+        ]
+      }
+    },
+    {
+      "name": "hash [\"4C4C4544-0032\", \"4c4c4544-0032\"]",
+      "why": "the same identifier read through two interfaces counts once, so it cannot inflate the match threshold",
+      "input": {
+        "operation": "HASH",
+        "identifiers": [
+          "4C4C4544-0032",
+          "4c4c4544-0032"
+        ]
+      },
+      "expect": {
+        "fingerprints": [
+          "sha256:fad96dfebfcee122eaa3c95e785853ebd59764a70c6869cb82ff8fbfee3a1020"
+        ]
+      }
+    },
+    {
+      "name": "hash [\"To be filled by O.E.M.\", \"abc\"]",
+      "why": "a firmware placeholder identifies nothing and is dropped rather than hashed",
+      "input": {
+        "operation": "HASH",
+        "identifiers": [
+          "To be filled by O.E.M.",
+          "abc"
+        ]
+      },
+      "expect": {
+        "fingerprints": [
+          "sha256:ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"
+        ]
+      }
+    },
+    {
+      "name": "hash [\"00000000-0000-0000-0000-000000000000\"]",
+      "why": "an all-zero UUID is a placeholder too",
+      "input": {
+        "operation": "HASH",
+        "identifiers": [
+          "00000000-0000-0000-0000-000000000000"
+        ]
+      },
+      "expect": {
+        "fingerprints": []
+      }
+    },
+    {
+      "name": "hash [\"\", \"   \", \"none\"]",
+      "why": "reading nothing usable produces nothing, never a constant",
+      "input": {
+        "operation": "HASH",
+        "identifiers": [
+          "",
+          "   ",
+          "none"
+        ]
+      },
+      "expect": {
+        "fingerprints": []
+      }
+    },
+    {
+      "name": "the digest itself",
+      "why": "every binding hashes the same bytes the same way, or none of the matching cases mean anything",
+      "input": {
+        "operation": "HASH",
+        "identifiers": [
+          "abc"
+        ]
+      },
+      "expect": {
+        "fingerprints": [
+          "sha256:ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"
+        ]
+      }
+    },
+    {
+      "name": "match [\"c\"] against [\"a\", \"b\", \"c\"]",
+      "why": "a container redeployed without its DMI mount reads one of three and keeps working",
+      "input": {
+        "operation": "MATCH",
+        "collected": [
+          "c"
+        ],
+        "stamped": [
+          "a",
+          "b",
+          "c"
+        ]
+      },
+      "expect": {
+        "outcome": "MATCH"
+      }
+    },
+    {
+      "name": "match [\"x\", \"b\", \"c\"] against [\"a\", \"b\", \"c\"]",
+      "why": "a replaced mainboard changes one identifier and keeps working",
+      "input": {
+        "operation": "MATCH",
+        "collected": [
+          "x",
+          "b",
+          "c"
+        ],
+        "stamped": [
+          "a",
+          "b",
+          "c"
+        ]
+      },
+      "expect": {
+        "outcome": "MATCH"
+      }
+    },
+    {
+      "name": "match [\"c\", \"y\", \"z\"] against [\"a\", \"b\", \"c\"]",
+      "why": "a host that copied one identifier is refused: one of three is below half",
+      "input": {
+        "operation": "MATCH",
+        "collected": [
+          "c",
+          "y",
+          "z"
+        ],
+        "stamped": [
+          "a",
+          "b",
+          "c"
+        ]
+      },
+      "expect": {
+        "outcome": "MISMATCH"
+      }
+    },
+    {
+      "name": "match [\"a\", \"z\"] against [\"a\", \"b\"]",
+      "why": "half of two is one, so one match of two passes",
+      "input": {
+        "operation": "MATCH",
+        "collected": [
+          "a",
+          "z"
+        ],
+        "stamped": [
+          "a",
+          "b"
+        ]
+      },
+      "expect": {
+        "outcome": "MATCH"
+      }
+    },
+    {
+      "name": "match [\"y\", \"z\"] against [\"a\", \"b\"]",
+      "why": "nothing in common is a mismatch however few were read",
+      "input": {
+        "operation": "MATCH",
+        "collected": [
+          "y",
+          "z"
+        ],
+        "stamped": [
+          "a",
+          "b"
+        ]
+      },
+      "expect": {
+        "outcome": "MISMATCH"
+      }
+    },
+    {
+      "name": "match [\"a\", \"b\", \"y\", \"z\"] against [\"a\", \"b\", \"c\"]",
+      "why": "four read, two matched: exactly half passes",
+      "input": {
+        "operation": "MATCH",
+        "collected": [
+          "a",
+          "b",
+          "y",
+          "z"
+        ],
+        "stamped": [
+          "a",
+          "b",
+          "c"
+        ]
+      },
+      "expect": {
+        "outcome": "MATCH"
+      }
+    },
+    {
+      "name": "match [\"a\", \"x\", \"y\", \"z\"] against [\"a\", \"b\", \"c\"]",
+      "why": "four read, one matched: below half",
+      "input": {
+        "operation": "MATCH",
+        "collected": [
+          "a",
+          "x",
+          "y",
+          "z"
+        ],
+        "stamped": [
+          "a",
+          "b",
+          "c"
+        ]
+      },
+      "expect": {
+        "outcome": "MISMATCH"
+      }
+    },
+    {
+      "name": "match [] against [\"a\"]",
+      "why": "reading nothing is its own answer, held apart from a mismatch so the operator is told to mount the identifiers rather than to reactivate",
+      "input": {
+        "operation": "MATCH",
+        "collected": [],
+        "stamped": [
+          "a"
+        ]
+      },
+      "expect": {
+        "outcome": "UNAVAILABLE"
+      }
+    },
+    {
+      "name": "match [\"a\"] against []",
+      "why": "a license naming no machine matches no machine",
+      "input": {
+        "operation": "MATCH",
+        "collected": [
+          "a"
+        ],
+        "stamped": []
+      },
+      "expect": {
+        "outcome": "MISMATCH"
+      }
+    }
+  ]
+}
