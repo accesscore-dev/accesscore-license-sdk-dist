@@ -2,7 +2,7 @@
 
 ## 무엇을 만들게 되는가
 
-순서대로 세 가지입니다. 기동 시 SDK를 조립하고, 운영자가 활성화할 자리를 만들고, 규칙이 성립해야 하는 지점에 게이트를 놓습니다.
+할 일은 세 가지입니다. 기동할 때 SDK를 조립하고, 운영자가 활성화할 화면을 만들고, 규칙이 성립해야 하는 자리에 게이트를 놓습니다.
 
 ```mermaid
 sequenceDiagram
@@ -95,11 +95,11 @@ CI에서는 워크플로우가 제공하는 `GITHUB_TOKEN`에 이미 `read:packa
 </servers>
 ```
 
-네이티브 코어는 jar 안에 플랫폼당 한 디렉터리로 담기고, 처음 필요할 때 임시 파일로 추출됩니다. 공유 라이브러리의 출처를 자체 정책으로 고정한 배포는 `-Daclic.native.library=<경로>`로 파일을 지정합니다 — 적재할 파일을 지정할 뿐 신뢰할 키를 지정하지 않으므로 어떤 검사도 약화시키지 않습니다.
+네이티브 코어는 jar 안에 플랫폼당 한 디렉터리로 담기고, 처음 필요할 때 임시 파일로 풀립니다. 공유 라이브러리를 어디서 가져올지 자체 정책으로 고정한 배포물은 `-Daclic.native.library=<경로>`로 파일을 지정하면 됩니다. 이 값은 읽어 들일 파일만 가리킬 뿐 신뢰할 키를 가리키지 않으므로 어떤 검사도 느슨해지지 않습니다.
 
 ## 제품이 제공해야 하는 것
 
-`LicenseSpi`에 모인 인터페이스 일곱 개입니다. 앞의 셋만 필수입니다.
+`LicenseSpi`에 인터페이스 일곱 개가 모여 있습니다. 이 가운데 앞의 셋만 반드시 구현해야 합니다.
 
 | 인터페이스 | 답하는 것 |
 | --- | --- |
@@ -128,11 +128,11 @@ LicenseManager manager = LicenseManager
 manager.verify(Instant.now(), integrityChecker.verify());
 ```
 
-`verify`는 현재 시각과 무결성 검사 결과를 호출자에게서 받습니다. 코어는 시계를 읽지 않고, 무결성 검사 대상은 언어마다 다릅니다.
+`verify`는 현재 시각과 무결성 검사 결과를 호출한 쪽에서 받습니다. 코어는 시계를 읽지 않고, 무엇을 해시해 무결성을 볼지는 언어마다 다르기 때문입니다.
 
 ## 직접 만든 엔드포인트에서 활성화하기
 
-SDK는 본문을 만들고 응답을 해석합니다. HTTP 호출은 애플리케이션의 몫이며, 타임아웃도 프록시도 애플리케이션이 정합니다.
+본문을 만들고 응답을 해석하는 일은 SDK가 합니다. HTTP 호출은 애플리케이션이 직접 하고, 타임아웃도 프록시도 애플리케이션이 정합니다.
 
 ```java
 @PostMapping("/license/activate")
@@ -188,7 +188,7 @@ flowchart LR
 
 ## 거절을 응답으로 바꾸기
 
-`LicenseDeniedException`은 상태, 오류 코드, 메시지 키, 인자를 싣습니다. 모든 어댑터가 이것으로 같은 문서를 씁니다. 자체 응답 봉투를 쓰는 제품은 핸들러 하나로 옮깁니다.
+`LicenseDeniedException`에는 상태, 오류 코드, 메시지 키, 인자가 담깁니다. 어느 어댑터를 쓰든 이 값으로 같은 형태의 문서를 만듭니다. 자체 응답 봉투를 쓰는 제품이라면 핸들러 하나만 두면 됩니다.
 
 ```java
 @ExceptionHandler(LicenseDeniedException.class)
@@ -200,11 +200,11 @@ public ResponseEntity<ApiResponse<Void>> handle(LicenseDeniedException denied, L
 }
 ```
 
-메시지 키와 인자 순서는 [messages.ko.md](messages.md)에 있습니다.
+메시지 키와 인자 순서는 [messages.md](messages.md)에 있습니다.
 
 ## 최신 상태 유지하기
 
-하트비트가 필요한 라이선스는 주기적인 갱신이 있어야 합니다. SDK가 본문을 쓰고 응답을 읽으며, 주기와 전송은 애플리케이션이 정합니다.
+하트비트를 요구하는 라이선스는 주기적으로 갱신해야 합니다. 본문을 만들고 응답을 읽는 일은 SDK가 하고, 주기와 전송 방법은 애플리케이션이 정합니다.
 
 ```java
 @Scheduled(cron = "0 17 3 * * *")
@@ -225,11 +225,11 @@ void refreshLicense() {
 }
 ```
 
-하트비트 실패는 배포물이 즉시 대응해야 하는 오류가 아닙니다. `heartbeatToleranceDays`가 지날 때까지 라이선스는 계속 쓸 수 있습니다. 기록만 남기고 다음 실행에 맡깁니다.
+하트비트가 한 번 실패했다고 곧바로 대응할 필요는 없습니다. `heartbeatToleranceDays`가 지나기 전까지 라이선스는 계속 유효합니다. 기록만 남기고 다음 실행에 맡기면 됩니다.
 
 ## 발급
 
-개인키는 발급하는 쪽만 갖습니다. 배포물은 `LicenseIssuer`를 클래스패스에 두고도 쓸 일이 없습니다 — 서명에는 고객이 갖지 못하는 키가 필요합니다.
+개인키는 발급하는 쪽만 갖습니다. 배포물의 클래스패스에 `LicenseIssuer`가 있어도 쓸 일은 없습니다. 서명하려면 고객이 결코 갖지 못하는 키가 있어야 하기 때문입니다.
 
 ```java
 LicenseIssuer issuer = new LicenseIssuer();
@@ -241,11 +241,11 @@ log.info("License signing key fingerprint: {}", issuer.fingerprintOf(privateKeyP
 SignedToken signed = issuer.sign(payload, privateKeyPem);
 ```
 
-개인키는 PKCS#8로 넘기고 코어가 서명 직후 메모리에서 지웁니다. 호출자가 든 사본은 호출자가 지웁니다.
+개인키는 PKCS#8 형식으로 넘깁니다. 코어는 서명을 만든 직후 그 값을 메모리에서 지웁니다. 호출한 쪽이 들고 있는 사본은 호출한 쪽이 지워야 합니다.
 
 ## 제품 키와 릴리스 버전
 
-양쪽이 모두 필요로 하고 서로 답이 같아야 하므로, 모든 연산이 코어로 건너갑니다.
+발급하는 쪽과 검증하는 쪽이 모두 이 값을 다루고 답이 서로 같아야 합니다. 그래서 모든 연산을 코어에 맡깁니다.
 
 ```java
 ProductKeys keys = new ProductKeys();

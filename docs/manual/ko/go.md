@@ -2,7 +2,7 @@
 
 ## 무엇을 만들게 되는가
 
-순서대로 세 가지입니다. 기동 시 SDK를 조립하고, 운영자가 활성화할 자리를 만들고, 규칙이 성립해야 하는 지점에 게이트를 놓습니다.
+할 일은 세 가지입니다. 기동할 때 SDK를 조립하고, 운영자가 활성화할 화면을 만들고, 규칙이 성립해야 하는 자리에 게이트를 놓습니다.
 
 ```mermaid
 sequenceDiagram
@@ -33,7 +33,7 @@ sequenceDiagram
 go get github.com/accesscore-dev/accesscore-license-sdk-dist/packages/go@v1.0.0
 ```
 
-코어는 정적으로 링크되므로 Go 바이너리가 코어를 안고 다닙니다 — 옆에 공유 라이브러리를 깔 필요가 없습니다. cgo가 필요하며 `CGO_ENABLED=0`으로는 빌드되지 않습니다.
+코어를 정적으로 링크하므로 Go 바이너리가 코어를 안고 다닙니다. 옆에 공유 라이브러리를 따로 깔 필요가 없습니다. 대신 cgo가 필요하며 `CGO_ENABLED=0`으로는 빌드되지 않습니다.
 
 ## 제품이 제공해야 하는 것
 
@@ -68,11 +68,11 @@ if _, err := manager.Verify(time.Now(), integrityOK); err != nil {
 }
 ```
 
-`Verify`는 현재 시각과 무결성 검사 결과를 호출자에게서 받습니다. 코어는 시계를 읽지 않고, 무결성 검사 대상은 언어마다 다릅니다.
+`Verify`는 현재 시각과 무결성 검사 결과를 호출한 쪽에서 받습니다. 코어는 시계를 읽지 않고, 무엇을 해시해 무결성을 볼지는 언어마다 다르기 때문입니다.
 
 ## 직접 만든 엔드포인트에서 활성화하기
 
-SDK는 본문을 만들고 응답을 해석합니다. HTTP 호출은 애플리케이션의 몫이며, 타임아웃도 전송 계층도 애플리케이션이 정합니다.
+본문을 만들고 응답을 해석하는 일은 SDK가 합니다. HTTP 호출은 애플리케이션이 직접 하고, 타임아웃도 전송 계층도 애플리케이션이 정합니다.
 
 ```go
 func activate(writer http.ResponseWriter, request *http.Request) {
@@ -150,7 +150,7 @@ flowchart LR
 
 ## 거절을 응답으로 바꾸기
 
-거절은 `Status`, `ErrorCode`, `Denial`, `HTTPStatus`를 실은 `*LicenseDenied`다. `WriteDenial`이 모든 어댑터가 쓰는 문서를 쓰고, 자체 응답 형태를 쓰는 제품은 필드를 읽어 자기 형태로 만듭니다.
+거절은 `*LicenseDenied`로 돌아오며 `Status`, `ErrorCode`, `Denial`, `HTTPStatus`를 담습니다. `WriteDenial`이 어느 어댑터에서나 같은 형태의 문서를 쓰고, 자체 응답 형태를 쓰는 제품은 필드를 읽어 직접 만들면 됩니다.
 
 ```go
 var denied *aclic.LicenseDenied
@@ -161,11 +161,11 @@ if errors.As(err, &denied) {
 }
 ```
 
-메시지 키와 인자 순서는 [messages.ko.md](messages.md)에 있습니다.
+메시지 키와 인자 순서는 [messages.md](messages.md)에 있습니다.
 
 ## 최신 상태 유지하기
 
-하트비트가 필요한 라이선스는 주기적인 갱신이 있어야 합니다. SDK가 본문을 쓰고 응답을 읽으며, 주기와 전송은 애플리케이션이 정합니다.
+하트비트를 요구하는 라이선스는 주기적으로 갱신해야 합니다. 본문을 만들고 응답을 읽는 일은 SDK가 하고, 주기와 전송 방법은 애플리케이션이 정합니다.
 
 ```go
 func refreshLicense(ctx context.Context) error {
@@ -196,11 +196,11 @@ func refreshLicense(ctx context.Context) error {
 }
 ```
 
-하트비트 실패는 배포물이 즉시 대응해야 하는 오류가 아닙니다. `heartbeatToleranceDays`가 지날 때까지 라이선스는 계속 쓸 수 있습니다. 기록만 남기고 다음 실행에 맡깁니다.
+하트비트가 한 번 실패했다고 곧바로 대응할 필요는 없습니다. `heartbeatToleranceDays`가 지나기 전까지 라이선스는 계속 유효합니다. 기록만 남기고 다음 실행에 맡기면 됩니다.
 
 ## 코어 직접 호출
 
-매니저가 감싸지 않은 연산은 호출 하나로 닿습니다.
+매니저가 감싸 두지 않은 연산도 호출 한 번이면 닿습니다.
 
 ```go
 var answer map[string]any

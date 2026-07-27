@@ -2,7 +2,7 @@
 
 ## 무엇을 만들게 되는가
 
-순서대로 세 가지입니다. 기동 시 SDK를 조립하고, 운영자가 활성화할 자리를 만들고, 규칙이 성립해야 하는 지점에 게이트를 놓습니다.
+할 일은 세 가지입니다. 기동할 때 SDK를 조립하고, 운영자가 활성화할 화면을 만들고, 규칙이 성립해야 하는 자리에 게이트를 놓습니다.
 
 ```mermaid
 sequenceDiagram
@@ -33,7 +33,7 @@ sequenceDiagram
 pip install https://github.com/accesscore-dev/accesscore-license-sdk-dist/releases/download/v1.0.0/accesscore_license-1.0.0-py3-none-any.whl
 ```
 
-네이티브 코어는 wheel 안에 플랫폼당 한 디렉터리로 담깁니다. 공유 라이브러리의 출처를 자체 정책으로 고정한 배포는 `ACLIC_NATIVE_LIBRARY`로 파일을 지정합니다 — 적재할 파일을 지정할 뿐 신뢰할 키를 지정하지 않습니다.
+네이티브 코어는 wheel 안에 플랫폼당 한 디렉터리로 담깁니다. 공유 라이브러리를 어디서 가져올지 자체 정책으로 고정한 배포물은 `ACLIC_NATIVE_LIBRARY`로 파일을 지정하면 됩니다. 이 값은 읽어 들일 파일만 가리킬 뿐 신뢰할 키를 가리키지 않습니다.
 
 프레임워크 추가 설치는 쓰는 것만 가져옵니다. `accesscore-license[fastapi]`, `[django]`, `[flask]`.
 
@@ -71,11 +71,11 @@ manager = LicenseManager(
 manager.verify(datetime.now(timezone.utc), integrity_ok=check_integrity())
 ```
 
-`verify`는 현재 시각과 무결성 검사 결과를 호출자에게서 받습니다. 코어는 시계를 읽지 않고, 무결성 검사 대상은 언어마다 다릅니다.
+`verify`는 현재 시각과 무결성 검사 결과를 호출한 쪽에서 받습니다. 코어는 시계를 읽지 않고, 무엇을 해시해 무결성을 볼지는 언어마다 다르기 때문입니다.
 
 ## 직접 만든 엔드포인트에서 활성화하기
 
-SDK는 본문을 만들고 응답을 해석합니다. HTTP 호출은 애플리케이션의 몫이며, 타임아웃도 프록시도 애플리케이션이 정합니다.
+본문을 만들고 응답을 해석하는 일은 SDK가 합니다. HTTP 호출은 애플리케이션이 직접 하고, 타임아웃도 프록시도 애플리케이션이 정합니다.
 
 ```python
 @app.post("/license/activate")
@@ -139,7 +139,7 @@ flowchart LR
 
 ## 거절을 응답으로 바꾸기
 
-`LicenseDenied`는 `status`, `error_code`, `message_key`, `arguments`, `http_status`를 싣고, `body()`가 모든 어댑터가 쓰는 문서를 만듭니다. 자체 응답 형태를 쓰는 제품은 키를 직접 번역합니다.
+`LicenseDenied`에는 `status`, `error_code`, `message_key`, `arguments`, `http_status`가 담기고, `body()`가 어느 어댑터에서나 같은 형태의 문서를 만듭니다. 자체 응답 형태를 쓰는 제품은 키를 직접 번역하면 됩니다.
 
 ```python
 from django.utils.translation import gettext
@@ -153,11 +153,11 @@ async def handle(request, denied):
     )
 ```
 
-메시지 키와 인자 순서는 [messages.ko.md](messages.md)에 있습니다.
+메시지 키와 인자 순서는 [messages.md](messages.md)에 있습니다.
 
 ## 최신 상태 유지하기
 
-하트비트가 필요한 라이선스는 주기적인 갱신이 있어야 합니다. SDK가 본문을 쓰고 응답을 읽으며, 주기와 전송은 애플리케이션이 정합니다.
+하트비트를 요구하는 라이선스는 주기적으로 갱신해야 합니다. 본문을 만들고 응답을 읽는 일은 SDK가 하고, 주기와 전송 방법은 애플리케이션이 정합니다.
 
 ```python
 def refresh_license() -> None:
@@ -177,7 +177,7 @@ def refresh_license() -> None:
     manager.verify(datetime.now(timezone.utc), integrity_ok=check_integrity())
 ```
 
-하트비트 실패는 배포물이 즉시 대응해야 하는 오류가 아닙니다. `heartbeatToleranceDays`가 지날 때까지 라이선스는 계속 쓸 수 있습니다. 기록만 남기고 다음 실행에 맡깁니다.
+하트비트가 한 번 실패했다고 곧바로 대응할 필요는 없습니다. `heartbeatToleranceDays`가 지나기 전까지 라이선스는 계속 유효합니다. 기록만 남기고 다음 실행에 맡기면 됩니다.
 
 ## 발급
 
@@ -189,7 +189,7 @@ print("License signing key fingerprint:", issuer.fingerprint_of(private_key_pem)
 signed = issuer.sign(payload, private_key_pem)
 ```
 
-개인키는 발급하는 쪽만 갖습니다. 코어는 서명 직후 개인키를 메모리에서 지웁니다.
+개인키는 발급하는 쪽만 갖습니다. 코어는 서명을 만든 직후 그 값을 메모리에서 지웁니다.
 
 ## 제품 키와 릴리스 버전
 
