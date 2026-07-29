@@ -58,14 +58,22 @@ int32_t aclic_evaluate(const char *req_json, char **out_json);
 /**
  * Signs a payload into a license token.
  *
- * The private key travels in the request as PKCS#8 and is wiped from the core's memory as
- * soon as the signature exists.
+ * The signing key travels beside the request rather than inside it, as bytes the caller still
+ * owns and can overwrite the moment this returns. Carried in the JSON it would become a string
+ * in the calling language, and a Java `String` cannot be cleared at all — the key would sit in
+ * the heap, and in any dump of it, until a collector happened to run.
+ *
+ * Pass a null key to ask only which pair a public key belongs to.
  *
  * # Safety
  *
  * `req_json` must be a NUL-terminated UTF-8 string; `out_json` must point to a writable slot.
+ * `private_key` must be null, or point to `private_key_len` readable bytes for this call.
  */
-int32_t aclic_sign(const char *req_json, char **out_json);
+int32_t aclic_sign(const char *req_json,
+                   const uint8_t *private_key,
+                   uintptr_t private_key_len,
+                   char **out_json);
 
 /**
  * Checks a token's signature without judging anything else about it.
@@ -119,11 +127,36 @@ int32_t aclic_activation_response(const char *res_json, char **out_json);
 /**
  * Generates a signing key pair.
  *
+ * The response document describes the pair — its algorithm, its verifying half, its
+ * fingerprint — and leaves the signing half out of it. That half is written to
+ * `out_private_key` as PKCS#8 PEM bytes, which the caller returns with [`aclic_bytes_free`].
+ * It is the one value here that must not survive in the caller's memory, and a JSON string is
+ * the shape a caller cannot clear.
+ *
  * # Safety
  *
- * `req_json` must be a NUL-terminated UTF-8 string; `out_json` must point to a writable slot.
+ * `req_json` must be a NUL-terminated UTF-8 string. `out_json`, `out_private_key`, and
+ * `out_private_key_len` must each point to a writable slot of their own type. On any non-zero
+ * return, no key is written and `out_private_key` is left null.
  */
-int32_t aclic_generate_keypair(const char *req_json, char **out_json);
+int32_t aclic_generate_keypair(const char *req_json,
+                               char **out_json,
+                               uint8_t **out_private_key,
+                               uintptr_t *out_private_key_len);
+
+/**
+ * Returns a byte buffer this library handed out, wiping it first.
+ *
+ * Only for buffers from [`aclic_generate_keypair`]. Wiping before releasing is the point: the
+ * bytes are a signing key, and a freed allocation keeps its contents until something else
+ * happens to reuse the memory.
+ *
+ * # Safety
+ *
+ * `bytes` must be null, or a pointer this library returned with exactly the `len` it reported,
+ * returned once.
+ */
+void aclic_bytes_free(uint8_t *bytes, uintptr_t len);
 
 /**
  * Generates and reads customer-facing product keys.

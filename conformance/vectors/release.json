@@ -112,14 +112,38 @@
     },
     {
       "name": "compare 1234567890123456789 to 999",
-      "why": "a segment too long to read as a number ranks lexically",
+      "why": "digits rank as a number however many of them there are: too long for a u64 is still larger than three digits",
       "input": {
         "operation": "COMPARE",
         "version": "1234567890123456789",
         "other": "999"
       },
       "expect": {
-        "result": -1
+        "result": 1
+      }
+    },
+    {
+      "name": "compare 99999999999999999999 to 99999999999999999998",
+      "why": "and among equal-length digits the last one still decides",
+      "input": {
+        "operation": "COMPARE",
+        "version": "99999999999999999999",
+        "other": "99999999999999999998"
+      },
+      "expect": {
+        "result": 1
+      }
+    },
+    {
+      "name": "compare 0000000000000000000009 to 8",
+      "why": "leading zeros are not length",
+      "input": {
+        "operation": "COMPARE",
+        "version": "0000000000000000000009",
+        "other": "8"
+      },
+      "expect": {
+        "result": 1
       }
     },
     {

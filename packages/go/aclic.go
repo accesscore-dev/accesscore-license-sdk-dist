@@ -127,12 +127,33 @@ func (c *Core) Evaluate(request any, out any) error {
 
 // Sign signs a payload into a token, or reads which key pair a key belongs to.
 //
-// The private key travels in the request as PKCS#8 and is wiped from the core's memory as soon
-// as the call is done with it.
-func (c *Core) Sign(request any, out any) error {
-	return c.call(func(r *C.char, o **C.char) C.int32_t {
-		return C.aclic_sign(r, o)
-	}, request, out, "sign")
+// The signing key travels beside the request as PKCS#8 bytes the caller still owns, never
+// inside it. A key marshalled into the request would become a Go string, and a string cannot
+// be overwritten — the key would stay readable in the heap until the collector felt like
+// moving it. Pass nil to ask only which pair a public key belongs to.
+func (c *Core) Sign(request any, privateKey []byte, out any) error {
+	encoded, err := json.Marshal(request)
+	if err != nil {
+		return &Error{Operation: "sign", Message: "the request could not be written"}
+	}
+
+	cRequest := C.CString(string(encoded))
+	defer C.free(unsafe.Pointer(cRequest))
+
+	var answer *C.char
+	var code C.int32_t
+	if len(privateKey) == 0 {
+		code = C.aclic_sign(cRequest, nil, 0, &answer)
+	} else {
+		// The core reads these bytes and keeps no copy; the slice stays the caller's to wipe.
+		code = C.aclic_sign(
+			cRequest,
+			(*C.uint8_t)(unsafe.Pointer(&privateKey[0])),
+			C.size_t(len(privateKey)),
+			&answer,
+		)
+	}
+	return c.read(code, answer, out, "sign")
 }
 
 // VerifySignature checks a token's signature without judging anything else about it.
@@ -175,10 +196,35 @@ func (c *Core) ActivationResponse(request any, out any) error {
 }
 
 // GenerateKeyPair generates a signing key pair.
-func (c *Core) GenerateKeyPair(request any, out any) error {
-	return c.call(func(r *C.char, o **C.char) C.int32_t {
-		return C.aclic_generate_keypair(r, o)
-	}, request, out, "generateKeyPair")
+//
+// What describes the pair is read into out; the signing half comes back separately as bytes the
+// caller can overwrite when it is done with them. It never becomes a string.
+func (c *Core) GenerateKeyPair(request any, out any) ([]byte, error) {
+	encoded, err := json.Marshal(request)
+	if err != nil {
+		return nil, &Error{
+			Operation: "generateKeyPair",
+			Message:   "the request could not be written",
+		}
+	}
+
+	cRequest := C.CString(string(encoded))
+	defer C.free(unsafe.Pointer(cRequest))
+
+	var answer *C.char
+	var key *C.uint8_t
+	var keyLen C.size_t
+
+	code := C.aclic_generate_keypair(cRequest, &answer, &key, &keyLen)
+
+	var privateKey []byte
+	if key != nil {
+		privateKey = C.GoBytes(unsafe.Pointer(key), C.int(keyLen))
+		// Wiped by the core before the memory is released, whatever the outcome above.
+		C.aclic_bytes_free(key, keyLen)
+	}
+
+	return privateKey, c.read(code, answer, out, "generateKeyPair")
 }
 
 // ProductKey generates and reads customer-facing product keys.
