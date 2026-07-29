@@ -145,6 +145,15 @@ int32_t aclic_generate_keypair(const char *req_json,
                                uintptr_t *out_private_key_len);
 
 /**
+ * The oldest payload schema this build reads, and so the oldest it will issue.
+ *
+ * An issuing server serves products built against different SDKs. Told nothing about what a
+ * deployment can read, the only safe shape to write is the oldest one anything still reads —
+ * so a caller needs this number as well as [`aclic_schema_version`].
+ */
+uint32_t aclic_min_readable_schema_version(void);
+
+/**
  * Returns a byte buffer this library handed out, wiping it first.
  *
  * Only for buffers from [`aclic_generate_keypair`]. Wiping before releasing is the point: the

@@ -59,7 +59,7 @@ The core travels inside each package, so nothing has to be installed beside your
 | Language | Where it comes from | Token |
 | --- | --- | --- |
 | Java | `dev.accesscore:license-sdk`, from the GitHub Packages registry | `read:packages` — see [the Java guide](java.md) |
-| Python | the wheel on [the release](https://github.com/accesscore-dev/accesscore-license-sdk-dist/releases/tag/v1.0.4) | none |
+| Python | the wheel on [the release](https://github.com/accesscore-dev/accesscore-license-sdk-dist/releases/tag/v1.0.5) | none |
 | Go | `github.com/accesscore-dev/accesscore-license-sdk-dist/packages/go` | none |
 
 Every language is also attached to the release as a file — the jar, the wheel, the Go module,

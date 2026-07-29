@@ -809,6 +809,39 @@
       }
     },
     {
+      "name": "a license this build issued at the oldest schema it writes",
+      "why": "one server issues for products built against different SDKs, so it writes the shape each of them reads rather than only the newest",
+      "input": {
+        "keys": [
+          {
+            "kid": "acps-2026-01",
+            "alg": "Ed25519",
+            "publicKey": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAuq6EywEynLqF5pwwr0LTxBPuf5RJl0WyAk075Vk49Ig=\n-----END PUBLIC KEY-----\n"
+          }
+        ],
+        "storedRecord": {
+          "licenseToken": "eyJzY2hlbWFWZXJzaW9uIjoxLCJhbGciOiJFZDI1NTE5Iiwia2lkIjoiYWNwcy0yMDI2LTAxIiwibGljZW5zZUlkIjoibGljX2NvbmZvcm1hbmNlIiwiYWN0aXZhdGlvbklkIjoiYWN0X2NvbmZvcm1hbmNlIiwiY3VzdG9tZXJJZCI6ImN1c19jb25mb3JtYW5jZSIsImN1c3RvbWVyIjoiQ29uZm9ybWFuY2UiLCJjaGFubmVsIjoiUFJPRFVDVElPTiIsInByb2R1Y3RDb2RlIjoiQUNDRVNTQ09SRV9DT05GT1JNQU5DRSIsIm1heFJlbGVhc2UiOiIzLjIiLCJ0aWVyTGFiZWwiOiJFbnRlcnByaXNlIiwiaXNzdWVkQXQiOiIyMDI2LTA3LTI1VDAwOjAwOjAwWiIsImFjdGl2YXRlZEF0IjoiMjAyNi0wNy0yNVQwMDowMDowMFoiLCJleHBpcmVzQXQiOiIyMDI3LTA3LTI1VDAwOjAwOjAwWiIsImdyYWNlUGVyaW9kRGF5cyI6MzAsIm1hY2hpbmVGaW5nZXJwcmludHMiOlsic2hhMjU2OmY5YzhjN2RkY2YzZDVmNTY2ZmQ2NzlmNjVkYjVkY2FiNDQ0NjU5NGNmNWQ5OTJmZWVhZDU0MTZjYmMxM2UwNjIiLCJzaGEyNTY6MWZiMTQwNGE5NzM4ZDVlZDIxMDU4NTFlYTAzOTAzN2ZiMTg0ZTY3NTI0MTg0ODlhNjQ3NDUzNWQ0NDU1MDczNiJdLCJub25jZSI6ImNvbmZvcm1hbmNlLW5vbmNlIiwiZmVhdHVyZXMiOlsiQVRURU5EQU5DRSIsIlZJU0lUT1IiXSwibGltaXRzIjp7IlVTRVJTIjoyMDAsIlJFQURFUl9QT1JUUyI6MH0sImhlYXJ0YmVhdFJlcXVpcmVkIjpmYWxzZSwiaGVhcnRiZWF0SW50ZXJ2YWxEYXlzIjowLCJoZWFydGJlYXRUb2xlcmFuY2VEYXlzIjowLCJtZXRhZGF0YSI6eyJpc3N1ZXIiOiJBY2Nlc3NDT1JFIn19.h4gtQgHhh_8jQ0JiSdbOC87s3sEr2Mo6smndZwCszv09bACm34_DrCw3C_h15RwPEA5zg4RvSZkW1q7fe9ecAA"
+        },
+        "now": "2026-08-01T00:00:00Z",
+        "integrityOk": true,
+        "productCode": "ACCESSCORE_CONFORMANCE",
+        "productRelease": "3.2",
+        "collectedFingerprints": [
+          "sha256:f9c8c7ddcf3d5f566fd679f65db5dcab4446594cf5d992feead5416cbc13e062",
+          "sha256:1fb1404a9738d5ed2105851ea039037fb184e6752418489a6474535d44550736"
+        ]
+      },
+      "expect": {
+        "status": "VALID",
+        "usable": true,
+        "errorCode": "LICENSE_VALID",
+        "availableFeatures": [
+          "ATTENDANCE",
+          "VISITOR"
+        ]
+      }
+    },
+    {
       "name": "a token below the oldest schema this build reads",
       "why": "the floor is the one place a release may declare earlier licenses dead, and it refuses them by the same door a newer schema is refused by",
       "input": {
