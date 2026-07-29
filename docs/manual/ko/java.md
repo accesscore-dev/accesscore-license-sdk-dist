@@ -42,7 +42,7 @@ repositories {
 }
 
 dependencies {
-    implementation 'dev.accesscore:license-sdk:1.0.0'
+    implementation 'dev.accesscore:license-sdk:1.0.2'
 }
 ```
 
@@ -79,7 +79,7 @@ CI에서는 워크플로우가 제공하는 `GITHUB_TOKEN`에 이미 `read:packa
 <dependency>
   <groupId>dev.accesscore</groupId>
   <artifactId>license-sdk</artifactId>
-  <version>1.0.0</version>
+  <version>1.0.2</version>
 </dependency>
 ```
 
@@ -155,7 +155,7 @@ public ActivationView activate(@RequestBody @Validated ActivationForm form) {
 }
 ```
 
-`activationResponse`는 논스가 요청과 다르거나, 머신 지문이 이 호스트와 맞지 않거나, 페이로드가 검증되지 않는 응답을 거절합니다. 다른 배포물에서 가로챈 응답을 여기에 쓸 수 없습니다.
+`activationResponse`는 논스가 요청과 다르거나, 머신 핑거프린트가 이 호스트와 맞지 않거나, 페이로드가 검증되지 않는 응답을 거절합니다. 다른 배포물에서 가로챈 응답을 여기에 쓸 수 없습니다.
 
 ## 게이트 적용하기
 

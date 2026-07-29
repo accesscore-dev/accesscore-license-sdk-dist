@@ -30,7 +30,7 @@ sequenceDiagram
 ## 가져다 쓰기
 
 ```
-pip install https://github.com/accesscore-dev/accesscore-license-sdk-dist/releases/download/v1.0.0/accesscore_license-1.0.0-py3-none-any.whl
+pip install https://github.com/accesscore-dev/accesscore-license-sdk-dist/releases/download/v1.0.2/accesscore_license-1.0.2-py3-none-any.whl
 ```
 
 네이티브 코어는 wheel 안에 플랫폼당 한 디렉터리로 담깁니다. 공유 라이브러리를 어디서 가져올지 자체 정책으로 고정한 배포물은 `ACLIC_NATIVE_LIBRARY`로 파일을 지정하면 됩니다. 이 값은 읽어 들일 파일만 가리킬 뿐 신뢰할 키를 가리키지 않습니다.
@@ -96,7 +96,7 @@ async def activate(form: ActivationForm):
     return manager.gate.state()
 ```
 
-`activation_response`는 논스가 요청과 다르거나, 머신 지문이 이 호스트와 맞지 않거나, 페이로드가 검증되지 않는 응답을 거절합니다. 다른 배포물에서 가로챈 응답을 여기에 쓸 수 없습니다.
+`activation_response`는 논스가 요청과 다르거나, 머신 핑거프린트가 이 호스트와 맞지 않거나, 페이로드가 검증되지 않는 응답을 거절합니다. 다른 배포물에서 가로챈 응답을 여기에 쓸 수 없습니다.
 
 ## 게이트 적용하기
 

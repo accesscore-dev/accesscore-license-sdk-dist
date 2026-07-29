@@ -30,7 +30,7 @@ sequenceDiagram
 ## 가져다 쓰기
 
 ```
-go get github.com/accesscore-dev/accesscore-license-sdk-dist/packages/go@v1.0.0
+go get github.com/accesscore-dev/accesscore-license-sdk-dist/packages/go@v1.0.2
 ```
 
 코어를 정적으로 링크하므로 Go 바이너리가 코어를 안고 다닙니다. 옆에 공유 라이브러리를 따로 깔 필요가 없습니다. 대신 cgo가 필요하며 `CGO_ENABLED=0`으로는 빌드되지 않습니다.
@@ -113,7 +113,7 @@ func activate(writer http.ResponseWriter, request *http.Request) {
 }
 ```
 
-`ActivationResponse`는 논스가 요청과 다르거나, 머신 지문이 이 호스트와 맞지 않거나, 페이로드가 검증되지 않는 응답을 거절합니다. 다른 배포물에서 가로챈 응답을 여기에 쓸 수 없습니다.
+`ActivationResponse`는 논스가 요청과 다르거나, 머신 핑거프린트가 이 호스트와 맞지 않거나, 페이로드가 검증되지 않는 응답을 거절합니다. 다른 배포물에서 가로챈 응답을 여기에 쓸 수 없습니다.
 
 ## 게이트 적용하기
 

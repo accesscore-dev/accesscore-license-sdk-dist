@@ -37,7 +37,7 @@ Decoded, a payload looks like this:
 
 ```json
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "alg": "Ed25519",
   "kid": "acps-2026-01",
   "licenseId": "lic_7f3a",
@@ -63,6 +63,10 @@ Decoded, a payload looks like this:
 
 Everything your application gates on is in there: `features` is the list, `limits` is the
 ceilings, and `expiresAt` plus `gracePeriodDays` is how long it lasts.
+
+A perpetual sale carries no `expiresAt` at all, and a license without one never expires — the
+expiry and grace checks are skipped and nothing else about the judgement changes. What such a
+license stops receiving is new releases, and that ceiling is `maxRelease`.
 
 ## Activation, step by step
 
@@ -233,7 +237,7 @@ flowchart TD
     C -->|none| D[4. the token parses]
     D -->|no| DX[NOT_LOADED]
     D -->|yes| E[5. the schema number]
-    E -->|unread| EX[SCHEMA_UNSUPPORTED]
+    E -->|outside the range| EX[SCHEMA_UNSUPPORTED]
     E -->|ok| F[6. allow list · key lookup · pair check]
     F -->|off| FX[INVALID_SIGNATURE]
     F -->|ok| G[7. the signature]
@@ -261,6 +265,22 @@ The order is the design. The schema number is read before the signature: a forma
 deployment cannot read is not worth computing a signature over. The product code sits right
 after the signature and before the machine binding — if the token belongs to another product,
 whether the machine matches is not a question worth asking.
+
+### One schema written, a range read
+
+This build issues under `SCHEMA_VERSION` alone and reads every schema from
+`MIN_READABLE_SCHEMA_VERSION` up to it. Accepting only its own number would mean that the moment
+a product upgrades the SDK, every license it has already sold is refused — and on a closed
+network there is no reissuing them.
+
+A schema bump may therefore only **add optional fields or relax a constraint**. Removing a field,
+making an optional one required, or reinterpreting an existing value is not a bump: it is raising
+the floor, which is the same act as invalidating every license below it, and it belongs to a
+major release that says so.
+
+When the schema rises, a verifier carrying an older SDK cannot read the new tokens. **The
+verifying side upgrades first, and only then does the issuing side start writing the new
+schema.**
 
 ## Statuses
 
