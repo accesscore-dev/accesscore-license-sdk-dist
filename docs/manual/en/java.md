@@ -43,7 +43,7 @@ repositories {
 }
 
 dependencies {
-    implementation 'dev.accesscore:license-sdk:1.0.2'
+    implementation 'dev.accesscore:license-sdk:1.0.3'
 }
 ```
 
@@ -82,7 +82,7 @@ In CI, the workflow's own `GITHUB_TOKEN` already carries `read:packages`.
 <dependency>
   <groupId>dev.accesscore</groupId>
   <artifactId>license-sdk</artifactId>
-  <version>1.0.2</version>
+  <version>1.0.3</version>
 </dependency>
 ```
 
