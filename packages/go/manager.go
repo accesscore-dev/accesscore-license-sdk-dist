@@ -37,9 +37,9 @@ type KeyMaterial struct {
 
 // CollectedIdentifiers is what a machine reports about itself.
 type CollectedIdentifiers struct {
-	Fingerprints        []string `json:"fingerprints"`
-	Sources             []string `json:"sources"`
-	UnavailableSources  []string `json:"unavailableSources"`
+	Fingerprints       []string `json:"fingerprints"`
+	Sources            []string `json:"sources"`
+	UnavailableSources []string `json:"unavailableSources"`
 }
 
 // PreparedRequest is a request ready for the host to send.
@@ -228,16 +228,17 @@ func (m *LicenseManager) ActivationRequest(
 
 	var prepared PreparedRequest
 	err = m.core.ActivationRequest(map[string]any{
-		"operation":           "ACTIVATE",
-		"productKey":          productKey,
-		"productCode":         m.identity.ProductCode(),
-		"productRelease":      m.identity.Release(),
-		"machineFingerprints": collected.Fingerprints,
-		"instanceId":          m.instanceID,
-		"requestedAt":         rfc3339(now),
-		"knownFeatures":       m.GatedFeatures(),
-		"knownQuotas":         m.CountedQuotas(),
-		"usage":               map[string]int64{},
+		"operation":             "ACTIVATE",
+		"productKey":            productKey,
+		"productCode":           m.identity.ProductCode(),
+		"productRelease":        m.identity.Release(),
+		"machineFingerprints":   collected.Fingerprints,
+		"instanceId":            m.instanceID,
+		"requestedAt":           rfc3339(now),
+		"knownFeatures":         m.GatedFeatures(),
+		"knownQuotas":           m.CountedQuotas(),
+		"knownVerificationKeys": m.CarriedKeyNames(),
+		"usage":                 map[string]int64{},
 	}, &prepared)
 	if err != nil {
 		return nil, err
@@ -263,17 +264,18 @@ func (m *LicenseManager) HeartbeatRequest(now time.Time) (*PreparedRequest, erro
 
 	var prepared PreparedRequest
 	err = m.core.ActivationRequest(map[string]any{
-		"operation":           "HEARTBEAT",
-		"activationId":        record.ActivationID,
-		"activationSecret":    record.ActivationSecret,
-		"productCode":         m.identity.ProductCode(),
-		"productRelease":      m.identity.Release(),
-		"machineFingerprints": collected.Fingerprints,
-		"instanceId":          instanceID,
-		"requestedAt":         rfc3339(now),
-		"knownFeatures":       m.GatedFeatures(),
-		"knownQuotas":         m.CountedQuotas(),
-		"usage":               m.Usage(),
+		"operation":             "HEARTBEAT",
+		"activationId":          record.ActivationID,
+		"activationSecret":      record.ActivationSecret,
+		"productCode":           m.identity.ProductCode(),
+		"productRelease":        m.identity.Release(),
+		"machineFingerprints":   collected.Fingerprints,
+		"instanceId":            instanceID,
+		"requestedAt":           rfc3339(now),
+		"knownFeatures":         m.GatedFeatures(),
+		"knownQuotas":           m.CountedQuotas(),
+		"knownVerificationKeys": m.CarriedKeyNames(),
+		"usage":                 m.Usage(),
 	}, &prepared)
 	if err != nil {
 		return nil, err
@@ -364,6 +366,19 @@ func (m *LicenseManager) GatedFeatures() []string {
 		return []string{}
 	}
 	return m.catalogue.GatedFeatures()
+}
+
+// CarriedKeyNames are the names of the verification keys this build carries.
+//
+// Taken from the keys themselves rather than from the host, because a name written down
+// separately could name a key that is not here — and the issuer would then sign under a key this
+// deployment cannot check.
+func (m *LicenseManager) CarriedKeyNames() []string {
+	names := make([]string, 0, len(m.keys))
+	for _, key := range m.keys {
+		names = append(names, key.Kid)
+	}
+	return names
 }
 
 // CountedQuotas are the quota codes this deployment can count.

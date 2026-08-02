@@ -301,9 +301,15 @@ schema.**
 | `INTEGRITY_FAILED` | the binary is not what it should be | ○ | reinstall from a trusted build |
 | `HEARTBEAT_OVERDUE` | a required refresh did not arrive | ○ | restore the connection, or refresh by hand |
 | `PRODUCT_MISMATCH` | another product's license | ○ | register the right license |
+| `SIGNING_KEY_COMPROMISED` | signed by a key that is in someone else's hands, and asking for more than was already held | ○ | take a release carrying the issuer's current signing key |
 
 `RELEASE_NOT_ENTITLED` stays usable on purpose. A ceiling that closed the state gate would stop
 access control at the door; what it costs instead is the feature list, which comes back empty.
+
+`SIGNING_KEY_COMPROMISED` is the one status the judgement above never reaches on its own. A
+deployment carrying a key whose signing half is known to be in someone else's hands measures what
+a token signed under it grants against what that deployment already held, and refuses one that
+asks for more. The record it measures against is the host's; the judgement is not given it.
 
 ## Machine binding
 

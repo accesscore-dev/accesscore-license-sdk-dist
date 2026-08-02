@@ -1,6 +1,6 @@
 # AccessCore License SDK
 
-Release **1.0.5**. A Rust core signs licenses, verifies them, and decides what a deployment
+Release **1.0.6**. A Rust core signs licenses, verifies them, and decides what a deployment
 may do; Java, Python, and Go products take that decision through a thin binding. The core
 travels inside each package, so nothing has to be installed beside your application.
 
@@ -39,7 +39,7 @@ repositories {
     }
 }
 dependencies {
-    implementation 'dev.accesscore:license-sdk:1.0.5'
+    implementation 'dev.accesscore:license-sdk:1.0.6'
 }
 ```
 
@@ -49,10 +49,10 @@ and `GITHUB_TOKEN` in the environment. The full walkthrough, Maven included, is 
 
 ## Python
 
-No token — the wheel is attached to [the release](https://github.com/accesscore-dev/accesscore-license-sdk-dist/releases/tag/v1.0.5).
+No token — the wheel is attached to [the release](https://github.com/accesscore-dev/accesscore-license-sdk-dist/releases/tag/v1.0.6).
 
 ```
-pip install https://github.com/accesscore-dev/accesscore-license-sdk-dist/releases/download/v1.0.5/accesscore_license-1.0.5-py3-none-any.whl
+pip install https://github.com/accesscore-dev/accesscore-license-sdk-dist/releases/download/v1.0.6/accesscore_license-1.0.6-py3-none-any.whl
 ```
 
 ## Go
@@ -60,12 +60,12 @@ pip install https://github.com/accesscore-dev/accesscore-license-sdk-dist/releas
 No token.
 
 ```
-go get github.com/accesscore-dev/accesscore-license-sdk-dist/packages/go@v1.0.5
+go get github.com/accesscore-dev/accesscore-license-sdk-dist/packages/go@v1.0.6
 ```
 
 ## Or take the file
 
-Every language is attached to [the release](https://github.com/accesscore-dev/accesscore-license-sdk-dist/releases/tag/v1.0.5): the jar, the wheel, the Go module, and the prebuilt cores for binding the C ABI directly.
+Every language is attached to [the release](https://github.com/accesscore-dev/accesscore-license-sdk-dist/releases/tag/v1.0.6): the jar, the wheel, the Go module, and the prebuilt cores for binding the C ABI directly.
 
 ## What is here
 

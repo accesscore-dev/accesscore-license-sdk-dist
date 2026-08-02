@@ -47,6 +47,7 @@ sequenceDiagram
 | `error.license.revoked` | — | `REVOKED` |
 | `error.license.clockTampered` | — | `CLOCK_TAMPERED` |
 | `error.license.integrityFailed` | — | `INTEGRITY_FAILED` |
+| `error.license.signingKeyCompromised` | — | `SIGNING_KEY_COMPROMISED` |
 
 숫자가 있어야 판단할 수 있는 사유에는 그 값을 함께 싣습니다. 페이로드를 읽지 못해 값을 채울 수 없을 때는 빈 자리표시자를 남기는 대신 `error.license.notValid`를 씁니다.
 

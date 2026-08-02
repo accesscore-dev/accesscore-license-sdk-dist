@@ -52,6 +52,7 @@ wrong place and tells an operator something untrue.
 | `error.license.revoked` | — | `REVOKED` |
 | `error.license.clockTampered` | — | `CLOCK_TAMPERED` |
 | `error.license.integrityFailed` | — | `INTEGRITY_FAILED` |
+| `error.license.signingKeyCompromised` | — | `SIGNING_KEY_COMPROMISED` |
 
 A denial that a number makes actionable carries it. When the payload could not be read far
 enough to fill one in, the denial falls back to `error.license.notValid` rather than rendering an

@@ -30,7 +30,7 @@ sequenceDiagram
 ## 가져다 쓰기
 
 ```
-pip install https://github.com/accesscore-dev/accesscore-license-sdk-dist/releases/download/v1.0.5/accesscore_license-1.0.5-py3-none-any.whl
+pip install https://github.com/accesscore-dev/accesscore-license-sdk-dist/releases/download/v1.0.6/accesscore_license-1.0.6-py3-none-any.whl
 ```
 
 네이티브 코어는 wheel 안에 플랫폼당 한 디렉터리로 담깁니다. 공유 라이브러리를 어디서 가져올지 자체 정책으로 고정한 배포물은 `ACLIC_NATIVE_LIBRARY`로 파일을 지정하면 됩니다. 이 값은 읽어 들일 파일만 가리킬 뿐 신뢰할 키를 가리키지 않습니다.

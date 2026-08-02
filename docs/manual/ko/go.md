@@ -30,7 +30,7 @@ sequenceDiagram
 ## 가져다 쓰기
 
 ```
-go get github.com/accesscore-dev/accesscore-license-sdk-dist/packages/go@v1.0.5
+go get github.com/accesscore-dev/accesscore-license-sdk-dist/packages/go@v1.0.6
 ```
 
 코어를 정적으로 링크하므로 Go 바이너리가 코어를 안고 다닙니다. 옆에 공유 라이브러리를 따로 깔 필요가 없습니다. 대신 cgo가 필요하며 `CGO_ENABLED=0`으로는 빌드되지 않습니다.
