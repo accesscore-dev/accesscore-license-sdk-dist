@@ -31,7 +31,7 @@ sequenceDiagram
 ## Taking it
 
 ```
-go get github.com/accesscore-dev/accesscore-license-sdk-dist/packages/go@v1.0.7
+go get github.com/accesscore-dev/accesscore-license-sdk-dist/packages/go@v1.0.8
 ```
 
 The core is linked statically, so a Go binary carries it rather than needing a shared library
