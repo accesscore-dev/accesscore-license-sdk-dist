@@ -31,7 +31,7 @@ sequenceDiagram
 ## Taking it
 
 ```
-pip install https://github.com/accesscore-dev/accesscore-license-sdk-dist/releases/download/v1.0.8/accesscore_license-1.0.8-py3-none-any.whl
+pip install https://github.com/accesscore-dev/accesscore-license-sdk-dist/releases/download/v1.0.9/accesscore_license-1.0.9-py3-none-any.whl
 ```
 
 The native core travels inside the wheel, one directory per platform. A deployment whose policy

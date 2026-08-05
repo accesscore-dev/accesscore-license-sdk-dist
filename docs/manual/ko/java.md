@@ -42,7 +42,7 @@ repositories {
 }
 
 dependencies {
-    implementation 'dev.accesscore:license-sdk:1.0.8'
+    implementation 'dev.accesscore:license-sdk:1.0.9'
 }
 ```
 
@@ -79,7 +79,7 @@ CI에서는 워크플로우가 제공하는 `GITHUB_TOKEN`에 이미 `read:packa
 <dependency>
   <groupId>dev.accesscore</groupId>
   <artifactId>license-sdk</artifactId>
-  <version>1.0.8</version>
+  <version>1.0.9</version>
 </dependency>
 ```
 
