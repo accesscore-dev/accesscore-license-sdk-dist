@@ -33,7 +33,7 @@ sequenceDiagram
 The module needs Go 1.22 or later.
 
 ```
-go get github.com/accesscore-dev/accesscore-license-sdk-dist/packages/go@v1.1.0
+go get github.com/accesscore-dev/accesscore-license-sdk-dist/packages/go@v1.2.0
 ```
 
 ```go
@@ -242,15 +242,36 @@ if errors.As(err, &denied) {
 }
 ```
 
+A request that `LicenseGateMiddleware`, `GinLicenseGate`, or `FiberLicenseGate` refuses never
+reaches this code: it gets the body `WriteDenial` wrote, which carries the message key and its
+arguments only. For a refused request to carry the sentence too, put your own middleware that
+calls `gate.RequireUsable()` in place of the adapter and build the response with the code above.
+
 Message keys and their argument order: [messages.md](messages.md).
 
 ## Keeping it fresh
 
-A license that requires a heartbeat needs a scheduled refresh. The SDK writes the request and
+A judgement is made at the instant `verify` is given, and the gate answers with the last one it
+was handed. When the end date, the grace period, or the heartbeat deadline passes, the gate keeps
+letting requests through on the earlier judgement until the next one. So the scheduled work is two
+jobs.
+
+Re-verification runs for every license. It calls `verify(now)` on a schedule so the time that has
+passed reaches the gate, for a license that needs no heartbeat too, and while heartbeats keep
+failing.
+
+The heartbeat runs only for a license with `heartbeatRequired` set. The SDK writes the request and
 reads the answer; the schedule and the transport are yours.
 
 ```go
-func refreshLicense(ctx context.Context) error {
+// Re-verification: every license. Brings the time that has passed to the gate.
+func reverifyLicense() error {
+    _, err := manager.Verify(time.Now(), integrityOK)
+    return err
+}
+
+// Heartbeat: only a license that requires one.
+func sendHeartbeat(ctx context.Context) error {
     state := manager.Gate().State()
     if state.Payload == nil || !state.Payload.HeartbeatRequired {
         return nil
@@ -293,7 +314,60 @@ before the first heartbeat.
 A failed heartbeat is not an error the deployment has to act on immediately. The license stays
 usable until the heartbeat window passes, which is the larger of `heartbeatToleranceHours` and
 `heartbeatIntervalHours`, read as 24 and 1 when the token carries zero. Log it and let the next
-run try again.
+run try again. Once the window passes, re-verification turns the judgement into `HEARTBEAT_OVERDUE`.
+
+The re-verification interval is the longest a passed deadline may go unenforced: on a 30-minute
+interval, a license whose end date or heartbeat deadline has passed keeps its earlier judgement for
+up to 30 minutes.
+
+## A compromised signing key
+
+When an issuer marks a signing key as compromised, the verification key list built into a
+customer's product carries that key with `compromised: true`. Taking the key out of the list
+would refuse every license signed under it as `INVALID_SIGNATURE`, including the ones issued
+properly before the compromise. Keep the key registered, and refuse with `SIGNING_KEY_COMPROMISED`
+only a token signed under it that asks for more than the deployment already held.
+
+The judgement does not make this comparison, because what it compares against is a record the
+application keeps. `KeyMaterial` carries no compromise mark; the application keeps the `kid` of
+each compromised key itself. The steps:
+
+1. On the first judgement after a compromised key is registered, store what the deployment holds
+   at that moment. When the judgement is usable, store its features, limits, expiry, and release
+   ceiling; when it is not, store that nothing was held. Store this once and never change it.
+2. Each time `Verify`, `Apply`, or `MarkRevoked` returns a judgement, check whether the payload's `kid` is a compromised key.
+3. When a token signed under a compromised key asks for more than what was stored, build a
+   `SIGNING_KEY_COMPROMISED` judgement and hand it to the gate.
+
+A token asks for more in four ways: a feature that was not stored; a limit that was capped when
+stored and is now higher or missing (a missing limit is unlimited); an expiry later than the
+stored one, or none; a release ceiling higher than the stored one, or none. When nothing was held,
+every token signed under that key is refused. Compare release ceilings with the `WITHIN_CEILING` operation of `aclic.Shared.Release`: compared
+as text, `3.10` ranks below `3.9`.
+
+```go
+judged, err := manager.Verify(now, integrityOK)
+if err != nil {
+    return err
+}
+if judged.Payload != nil && compromisedKeyIDs[judged.Payload.Kid] &&
+    !ceiling.Covers(judged.Payload) { // against what step 1 stored
+    manager.Gate().Refresh(&aclic.Evaluation{
+        Status:            "SIGNING_KEY_COMPROMISED",
+        ErrorCode:         "LICENSE_SIGNING_KEY_COMPROMISED",
+        Denial:            &aclic.Denial{MessageKey: "error.license.signingKeyCompromised", Arguments: []any{}},
+        NextWatermark:     judged.NextWatermark,
+        AvailableFeatures: []string{},
+        Limits:            map[string]int64{},
+        GraceExpiresAt:    judged.GraceExpiresAt,
+        HeartbeatDeadline: judged.HeartbeatDeadline,
+        Payload:           judged.Payload,
+    })
+}
+```
+
+An application that uses this status has to translate `error.license.signingKeyCompromised`. The
+keys are listed in [messages.md](messages.md).
 
 ## The record and the other calls
 

@@ -43,7 +43,7 @@ repositories {
 }
 
 dependencies {
-    implementation 'dev.accesscore:license-sdk:1.1.0'
+    implementation 'dev.accesscore:license-sdk:1.2.0'
 }
 ```
 
@@ -80,7 +80,7 @@ CI에서는 워크플로우가 제공하는 `GITHUB_TOKEN`에 이미 `read:packa
 <dependency>
   <groupId>dev.accesscore</groupId>
   <artifactId>license-sdk</artifactId>
-  <version>1.1.0</version>
+  <version>1.2.0</version>
 </dependency>
 ```
 
@@ -266,7 +266,7 @@ flowchart LR
 
 ## 거절을 응답으로 바꾸기
 
-`LicenseDeniedException`에는 상태, 오류 코드, 메시지 키, 인자가 담깁니다. 어느 어댑터를 쓰든 이 값으로 같은 형태의 문서를 만듭니다. 자체 응답 봉투를 쓰는 제품이라면 핸들러 하나만 두면 됩니다.
+`LicenseDeniedException`에는 상태, 오류 코드, 메시지 키, 인자가 담깁니다. 컨트롤러나 서비스 안에서 던져진 거절(`@RequiresFeature`, `checkQuota`)은 핸들러 하나로 응답 형태를 정합니다.
 
 ```java
 @ExceptionHandler(LicenseDeniedException.class)
@@ -278,15 +278,39 @@ public ResponseEntity<ApiResponse<Void>> handle(LicenseDeniedException denied, L
 }
 ```
 
+`LicenseEnforcementFilter`가 막은 요청에는 이 핸들러가 실행되지 않습니다. 필터는 Spring MVC의 예외 처리보다 먼저 실행되고 거절 본문을 직접 쓰며, 기본 본문에는 메시지 키와 인자만 들어 있습니다. 필터가 막은 요청에도 번역된 문장을 담으려면 필터에 `DenialMessages`를 넘기세요. 필터는 요청 로케일로 이 함수를 호출하고, 돌려받은 문장을 본문의 `message`에 넣습니다.
+
+```java
+DenialMessages messages = (denied, locale) -> messageSource.getMessage(
+        denied.denial().messageKey(), denied.denial().argumentArray(),
+        denied.denial().messageKey(), locale);
+
+new LicenseEnforcementFilter(manager.gate(), List.of("/license/**", "/activations/**"),
+        mapper, messages)
+```
+
+WebFlux의 `LicenseEnforcementWebFilter`와 Jakarta REST의 `LicenseEnforcementRequestFilter`도 같은 인자를 받습니다. 필터의 거절은 이 핸들러가 정한 응답 형태를 거치지 않으므로, 두 거절의 응답 형태는 다릅니다. 클라이언트는 두 응답에 모두 들어 있는 `errorCode`로 분기하세요.
+
 메시지 키와 인자 순서는 [messages.md](messages.md)에 있습니다.
 
 ## 최신 상태 유지하기
 
-하트비트를 요구하는 라이선스는 주기적으로 갱신해야 합니다. 본문을 만들고 응답을 읽는 일은 SDK가 하고, 주기와 전송 방법은 애플리케이션이 정합니다.
+판정은 `verify`를 호출할 때 넘긴 시각으로 내리고, 게이트는 마지막 판정을 그대로 돌려줍니다. 종료일, 유예 기간, 하트비트 기한이 지나도 다음 판정 전까지 게이트는 이전 판정으로 요청을 통과시킵니다. 그래서 주기 작업을 둘로 나눕니다.
+
+재판정은 모든 라이선스에 둡니다. `verify(now)`를 주기적으로 호출해 지난 시간을 게이트에 반영합니다. 하트비트가 필요 없는 라이선스에도 두고, 하트비트가 계속 실패하는 동안에도 실행합니다.
+
+하트비트는 `heartbeatRequired`가 켜진 라이선스에만 둡니다. 본문을 만들고 응답을 읽는 일은 SDK가 하고, 주기와 전송 방법은 애플리케이션이 정합니다.
 
 ```java
+// 재판정: 모든 라이선스. 지난 시간을 게이트에 반영한다.
+@Scheduled(fixedDelayString = "PT30M", initialDelayString = "PT30M")
+void reverifyLicense() {
+    manager.verify(Instant.now(), integrity.verify());
+}
+
+// 하트비트: 하트비트를 요구하는 라이선스만.
 @Scheduled(cron = "0 */30 * * * *")
-void refreshLicense() {
+void sendHeartbeat() {
     LicensePayload payload = manager.gate().state().payload();
     if (payload == null || !Boolean.TRUE.equals(payload.heartbeatRequired())) {
         return;
@@ -308,7 +332,37 @@ void refreshLicense() {
 
 `withHeartbeat`는 토큰을 바꾸고 `lastHeartbeatAt`을 기록합니다. 하트비트 기한은 이 시각부터 계산하고, 첫 하트비트 전에는 `activatedAt`부터 계산합니다. 하트비트 응답에는 활성화 비밀값이 없으므로 저장된 기록을 그대로 두고 이 두 필드만 바꾸세요. `markRevoked`는 폐기 기록을 저장하므로 재시작한 뒤에도 거절이 유지됩니다.
 
-하트비트가 한 번 실패했다고 곧바로 대응할 필요는 없습니다. 라이선스는 하트비트 허용 시간이 지나기 전까지 계속 유효합니다. 허용 시간은 `heartbeatToleranceHours`와 `heartbeatIntervalHours` 가운데 긴 쪽이고, 라이선스에 0이 들어 있으면 각각 24시간과 1시간으로 계산합니다. 기록만 남기고 다음 실행에 맡기면 됩니다.
+하트비트가 한 번 실패했다고 곧바로 대응할 필요는 없습니다. 라이선스는 하트비트 허용 시간이 지나기 전까지 계속 유효합니다. 허용 시간은 `heartbeatToleranceHours`와 `heartbeatIntervalHours` 가운데 긴 쪽이고, 라이선스에 0이 들어 있으면 각각 24시간과 1시간으로 계산합니다. 기록만 남기고 다음 실행에 맡기면 됩니다. 허용 시간이 지나면 재판정이 판정을 `HEARTBEAT_OVERDUE`로 바꿉니다.
+
+재판정 주기는 기한이 지난 뒤 게이트가 거절로 바뀌기까지 허용할 최대 시간입니다. 30분 주기라면 종료일이나 하트비트 기한이 지난 뒤 최대 30분 동안 이전 판정이 유지됩니다.
+
+## 유출된 서명 키 다루기
+
+발급자가 서명 키를 유출로 표시하면, 고객 제품에 넣는 검증 키 목록에서 그 키에 유출 표시(`compromised: true`)가 붙습니다. 그 키를 목록에서 빼면 유출 전에 정상으로 발급된 라이선스까지 `INVALID_SIGNATURE`로 거절됩니다. 키는 그대로 등록해 두고, 그 키로 서명된 토큰이 이미 보유한 범위보다 더 많이 요구할 때만 `SIGNING_KEY_COMPROMISED`로 거절하세요.
+
+판정은 이 비교를 하지 않습니다. 비교 기준이 애플리케이션이 보관하는 기록이기 때문입니다. 그래서 `KeyMaterial`에는 유출 표시를 넣지 않고, 유출된 키의 `kid` 목록은 애플리케이션이 따로 보관합니다. 절차는 다음과 같습니다.
+
+1. 유출 표시가 붙은 키를 처음 등록한 뒤 첫 판정에서 그 시점에 보유한 범위를 저장합니다. 판정이 사용 가능이면 기능 목록, 한도, 만료 시각, 릴리스 상한을 저장하고, 사용 가능이 아니면 보유한 범위가 없다고 저장합니다. 이 기록은 한 번만 저장하고 이후에 바꾸지 않습니다.
+2. `verify`, `apply`, `markRevoked`가 판정을 돌려줄 때마다 페이로드의 `kid`가 유출된 키인지 확인합니다.
+3. 유출된 키로 서명된 토큰이 저장한 범위를 넘으면 `SIGNING_KEY_COMPROMISED` 판정을 만들어 게이트에 넘깁니다.
+
+토큰이 저장한 범위를 넘는 경우는 넷입니다. 저장하지 않은 기능이 있는 경우, 저장할 때 상한이 있던 한도가 더 크거나 빠진 경우(빠진 한도는 무제한입니다), 저장한 만료 시각보다 늦거나 만료 시각이 없는 경우, 저장한 릴리스 상한보다 높거나 상한이 없는 경우입니다. 보유한 범위가 없다고 저장했다면 그 키로 서명된 토큰은 모두 거절합니다. 릴리스 상한은 `ReleaseVersions.isWithinCeiling`으로 비교하세요. 문자열로 비교하면 `3.10`이 `3.9`보다 낮게 나옵니다.
+
+```java
+EvaluationResponse judged = manager.verify(now, integrity.verify());
+LicensePayload payload = judged.payload();
+if (payload != null && compromisedKeyIds.contains(payload.kid())
+        && !ceiling.covers(payload)) {          // 1번에서 저장한 범위와 비교
+    manager.gate().refresh(new EvaluationResponse(
+            LicenseStatus.SIGNING_KEY_COMPROMISED, false,
+            LicenseStatus.SIGNING_KEY_COMPROMISED.errorCode(),
+            new Denial("error.license.signingKeyCompromised", List.of()),
+            judged.nextWatermark(), List.of(), Map.of(),
+            judged.graceExpiresAt(), judged.heartbeatDeadline(), payload));
+}
+```
+
+이 상태를 쓰는 애플리케이션은 `error.license.signingKeyCompromised`를 번역해 두어야 합니다. 키 목록은 [messages.md](messages.md)에 있습니다.
 
 ## 발급
 

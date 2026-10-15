@@ -5,7 +5,9 @@ its own internationalization, and a core holding wording would grow a phrase boo
 language is added.
 
 A host must define every key below in each locale it serves. A missing key surfaces as an
-untranslated placeholder at the worst moment — the operator is already locked out.
+untranslated placeholder at the worst moment — the operator is already locked out. The one
+exception is `error.license.signingKeyCompromised`: only an application that handles a
+compromised signing key has to define it.
 
 ## Where a message comes from
 
@@ -56,7 +58,9 @@ wrong place and tells an operator something untrue.
 
 The judgement never reaches `SIGNING_KEY_COMPROMISED` on its own. The host assigns it, because
 what the token is measured against is a record the host keeps; the key is listed here so the
-message is translated when the host uses it.
+message is translated when the host uses it. An application that does not handle a key
+marked compromised never reaches this status and need not define the key. The steps are in each
+language's manual, under "A compromised signing key".
 
 A denial that a number makes actionable carries it. When the payload could not be read far
 enough to fill one in, the denial falls back to `error.license.notValid` rather than rendering an
@@ -113,6 +117,9 @@ reason without the prefix, such as `SEAT_EXHAUSTED`, beside the message key.
 - A judgement's code is `LICENSE_` plus the status name: `LICENSE_HEARTBEAT_OVERDUE`.
 - A gate's codes are `LICENSE_FEATURE_NOT_LICENSED`, `LICENSE_FEATURE_NOT_ACTIVATED`, and
   `LICENSE_QUOTA_EXCEEDED`.
+- In `RELEASE_NOT_ENTITLED`, a gate's feature check refuses with the judgement's own code,
+  `LICENSE_RELEASE_NOT_ENTITLED`, and `error.license.releaseNotEntitled` rather than a feature
+  code: the feature is in the license, and what stopped it is the running release.
 
 ## The body every adapter writes
 
@@ -124,6 +131,11 @@ reason without the prefix, such as `SEAT_EXHAUSTED`, beside the message key.
   "arguments": []
 }
 ```
+
+A Java adapter filter (`LicenseEnforcementFilter`, `LicenseEnforcementWebFilter`,
+`LicenseEnforcementRequestFilter`) handed a `DenialMessages` adds the sentence, resolved in the
+request's locale, as `message`. Without one there is no `message`. The Go and Python adapters do
+not write it.
 
 One shape, whichever framework produced it. The adapter contract tests assert exactly this, which
 is what makes a new adapter cheap: it moves the gate's answer into a response and decides nothing.

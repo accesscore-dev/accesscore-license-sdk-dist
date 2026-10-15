@@ -190,12 +190,28 @@ func (g *Gate) RequireUsable() error {
 }
 
 // RequireFeature refuses when the license does not grant a feature, or it is switched off.
+//
+// A release above the contract ceiling keeps the deployment usable and grants no feature. The
+// refusal names the release and the ceiling rather than the feature: the feature is in the
+// license, and an operator sent to look for it would find it there.
 func (g *Gate) RequireFeature(feature string) error {
 	if err := g.RequireUsable(); err != nil {
 		return err
 	}
 
 	state := g.State()
+	if state.Status == "RELEASE_NOT_ENTITLED" {
+		denial := Denial{MessageKey: "error.license.notValid", Arguments: []any{}}
+		if state.Denial != nil {
+			denial = *state.Denial
+		}
+		return &LicenseDenied{
+			Status:     state.Status,
+			ErrorCode:  state.ErrorCode,
+			Denial:     denial,
+			HTTPStatus: Forbidden,
+		}
+	}
 	if !contains(state.AvailableFeatures, feature) {
 		return &LicenseDenied{
 			Status:    state.Status,

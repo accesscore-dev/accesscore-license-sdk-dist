@@ -12,7 +12,7 @@ knows and reads back what your application may do. Nothing about a license is de
 | The payload format and the schema number | Storing and loading the record (JPA, a file, a registry) |
 | Signing and verifying | The current instant |
 | Collecting machine identifiers, and matching them | HTTP transport, retries, timeouts |
-| Expiry, the grace period, per-channel relaxations | Running the heartbeat on a schedule |
+| Expiry, the grace period, per-channel relaxations | Running re-verification and the heartbeat on a schedule |
 | The heartbeat deadline | Where the gate is attached |
 | Deciding a clock was rolled back | Hashing its own binary |
 | Product code and release-ceiling checks | Recording audit rows |
@@ -190,7 +190,10 @@ sequenceDiagram
 
 The gate reads a cached judgement, so a request costs a map lookup rather than a signature
 verification. You decide when the cache is replaced — at start, after an activation, after a
-heartbeat, and on whatever schedule you keep.
+heartbeat, and on whatever schedule you keep. A scheduled re-verification is required, for a
+license that needs no heartbeat too: a judgement is made at the instant the caller gives it, so
+when the end date, the grace period, or the heartbeat deadline passes, the gate keeps answering
+with the earlier judgement until the next one.
 
 A quota with no entry in the payload is unlimited; an entry of zero is zero. A license issued
 before a quota code existed must not read as forbidding everything under it.
@@ -346,12 +349,16 @@ was sold with.
 `RELEASE_NOT_ENTITLED` stays usable on purpose. A ceiling that closed the state gate would stop
 access control at the door; what it costs instead is the feature list, which comes back empty.
 The limits stay as the license sold them: a quota with no entry is unlimited, so emptying them
-would lift every ceiling.
+would lift every ceiling. In this status the gate's `requireFeature` refuses with
+`LICENSE_RELEASE_NOT_ENTITLED`, carrying the running release and the contract ceiling rather than
+the feature. A refusal naming the feature sends the operator to the license's feature list, where
+the feature is present and the cause is not.
 
 `SIGNING_KEY_COMPROMISED` is the one status the judgement above never reaches on its own. A
 deployment carrying a key whose signing half is known to be in someone else's hands measures what
 a token signed under it grants against what that deployment already held, and refuses one that
-asks for more. The record it measures against is the host's; the judgement is not given it.
+asks for more. The record it measures against is the host's; the judgement is not given it. The steps are in
+each language's manual, under "A compromised signing key".
 
 ## Machine binding
 
@@ -478,7 +485,7 @@ Where each one belongs:
 | `state()` | a status screen, a health endpoint | a read |
 | `requireFeature` | the entry of a feature's controller or service | a list lookup |
 | `checkQuota` | just before creating the thing being counted | a map lookup |
-| `refresh` | after activation, after a heartbeat, on a schedule | one full judgement |
+| `refresh` | after activation, after a heartbeat, on a re-verification schedule (required, heartbeat or not) | one full judgement |
 
 ## What the SDK does not decide
 

@@ -44,7 +44,7 @@ repositories {
 }
 
 dependencies {
-    implementation 'dev.accesscore:license-sdk:1.1.0'
+    implementation 'dev.accesscore:license-sdk:1.2.0'
 }
 ```
 
@@ -83,7 +83,7 @@ In CI, the workflow's own `GITHUB_TOKEN` already carries `read:packages`.
 <dependency>
   <groupId>dev.accesscore</groupId>
   <artifactId>license-sdk</artifactId>
-  <version>1.1.0</version>
+  <version>1.2.0</version>
 </dependency>
 ```
 
@@ -294,8 +294,8 @@ flowchart LR
 ## Turning a refusal into a response
 
 `LicenseDeniedException` carries a status, an error code, a message key, and its arguments.
-Every adapter writes the same document from it. A product with its own response envelope maps
-it in one handler:
+A refusal thrown inside a controller or a service (`@RequiresFeature`, `checkQuota`) is shaped by
+one handler:
 
 ```java
 @ExceptionHandler(LicenseDeniedException.class)
@@ -307,16 +307,50 @@ public ResponseEntity<ApiResponse<Void>> handle(LicenseDeniedException denied, L
 }
 ```
 
+`LicenseEnforcementFilter` never reaches this handler. It runs before Spring MVC's exception
+handling and writes the refusal itself, and by default that body carries the message key and its
+arguments only. Hand the filter a `DenialMessages` for the body to carry the sentence as well: the
+filter calls it with the request's locale and writes what it returns as `message`.
+
+```java
+DenialMessages messages = (denied, locale) -> messageSource.getMessage(
+        denied.denial().messageKey(), denied.denial().argumentArray(),
+        denied.denial().messageKey(), locale);
+
+new LicenseEnforcementFilter(manager.gate(), List.of("/license/**", "/activations/**"),
+        mapper, messages)
+```
+
+`LicenseEnforcementWebFilter` (WebFlux) and `LicenseEnforcementRequestFilter` (Jakarta REST) take
+the same argument. The filter's refusal does not pass through the response shape this handler
+sets, so the two refusals differ in shape: branch on `errorCode`, which both carry.
+
 Message keys and their argument order: [messages.md](messages.md).
 
 ## Keeping it fresh
 
-A license that requires a heartbeat needs a scheduled refresh. The SDK writes the body and reads
-the answer; the schedule and the transport are yours.
+A judgement is made at the instant `verify` is given, and the gate answers with the last one it
+was handed. When the end date, the grace period, or the heartbeat deadline passes, the gate keeps
+letting requests through on the earlier judgement until the next one. So the scheduled work is two
+jobs.
+
+Re-verification runs for every license. It calls `verify(now)` on a schedule so the time that has
+passed reaches the gate, for a license that needs no heartbeat too, and while heartbeats keep
+failing.
+
+The heartbeat runs only for a license with `heartbeatRequired` set. The SDK writes the body and
+reads the answer; the schedule and the transport are yours.
 
 ```java
+// Re-verification: every license. Brings the time that has passed to the gate.
+@Scheduled(fixedDelayString = "PT30M", initialDelayString = "PT30M")
+void reverifyLicense() {
+    manager.verify(Instant.now(), integrity.verify());
+}
+
+// Heartbeat: only a license that requires one.
 @Scheduled(cron = "0 */30 * * * *")
-void refreshLicense() {
+void sendHeartbeat() {
     LicensePayload payload = manager.gate().state().payload();
     if (payload == null || !Boolean.TRUE.equals(payload.heartbeatRequired())) {
         return;
@@ -344,7 +378,53 @@ stores the revocation stamp, so the denial outlives a restart.
 A failed heartbeat is not an error the deployment has to act on immediately. The license stays
 usable until the heartbeat window passes: the larger of `heartbeatToleranceHours` and
 `heartbeatIntervalHours`, read as 24 and 1 hours when the license carries zero. Log it and let
-the next run try again.
+the next run try again. Once the window passes, re-verification turns the judgement into `HEARTBEAT_OVERDUE`.
+
+The re-verification interval is the longest a passed deadline may go unenforced: on a 30-minute
+interval, a license whose end date or heartbeat deadline has passed keeps its earlier judgement for
+up to 30 minutes.
+
+## A compromised signing key
+
+When an issuer marks a signing key as compromised, the verification key list built into a
+customer's product carries that key with `compromised: true`. Taking the key out of the list
+would refuse every license signed under it as `INVALID_SIGNATURE`, including the ones issued
+properly before the compromise. Keep the key registered, and refuse with `SIGNING_KEY_COMPROMISED`
+only a token signed under it that asks for more than the deployment already held.
+
+The judgement does not make this comparison, because what it compares against is a record the
+application keeps. `KeyMaterial` carries no compromise mark; the application keeps the `kid` of
+each compromised key itself. The steps:
+
+1. On the first judgement after a compromised key is registered, store what the deployment holds
+   at that moment. When the judgement is usable, store its features, limits, expiry, and release
+   ceiling; when it is not, store that nothing was held. Store this once and never change it.
+2. Each time `verify`, `apply`, or `markRevoked` returns a judgement, check whether the payload's `kid` is a compromised key.
+3. When a token signed under a compromised key asks for more than what was stored, build a
+   `SIGNING_KEY_COMPROMISED` judgement and hand it to the gate.
+
+A token asks for more in four ways: a feature that was not stored; a limit that was capped when
+stored and is now higher or missing (a missing limit is unlimited); an expiry later than the
+stored one, or none; a release ceiling higher than the stored one, or none. When nothing was held,
+every token signed under that key is refused. Compare release ceilings with `ReleaseVersions.isWithinCeiling`: compared
+as text, `3.10` ranks below `3.9`.
+
+```java
+EvaluationResponse judged = manager.verify(now, integrity.verify());
+LicensePayload payload = judged.payload();
+if (payload != null && compromisedKeyIds.contains(payload.kid())
+        && !ceiling.covers(payload)) {          // against what step 1 stored
+    manager.gate().refresh(new EvaluationResponse(
+            LicenseStatus.SIGNING_KEY_COMPROMISED, false,
+            LicenseStatus.SIGNING_KEY_COMPROMISED.errorCode(),
+            new Denial("error.license.signingKeyCompromised", List.of()),
+            judged.nextWatermark(), List.of(), Map.of(),
+            judged.graceExpiresAt(), judged.heartbeatDeadline(), payload));
+}
+```
+
+An application that uses this status has to translate `error.license.signingKeyCompromised`. The
+keys are listed in [messages.md](messages.md).
 
 ## Issuing
 

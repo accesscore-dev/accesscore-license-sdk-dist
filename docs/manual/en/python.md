@@ -33,7 +33,7 @@ sequenceDiagram
 The SDK needs Python 3.9 or later.
 
 ```
-pip install https://github.com/accesscore-dev/accesscore-license-sdk-dist/releases/download/v1.1.0/accesscore_license-1.1.0-py3-none-any.whl
+pip install https://github.com/accesscore-dev/accesscore-license-sdk-dist/releases/download/v1.2.0/accesscore_license-1.2.0-py3-none-any.whl
 ```
 
 The native core travels inside the wheel, one directory per platform: `linux-x86_64`,
@@ -46,7 +46,7 @@ Framework extras install only what a product uses: `fastapi`, `django`, `flask`.
 not on PyPI, so name the extra together with the wheel's address:
 
 ```
-pip install "accesscore-license[fastapi] @ https://github.com/accesscore-dev/accesscore-license-sdk-dist/releases/download/v1.1.0/accesscore_license-1.1.0-py3-none-any.whl"
+pip install "accesscore-license[fastapi] @ https://github.com/accesscore-dev/accesscore-license-sdk-dist/releases/download/v1.2.0/accesscore_license-1.2.0-py3-none-any.whl"
 ```
 
 ## What a product has to supply
@@ -229,15 +229,37 @@ async def handle(request, denied: LicenseDenied):
     )
 ```
 
+A request that `asgi_license_gate`, `wsgi_license_gate`, `django_license_middleware`, or
+`flask_register` refuses never reaches this handler: it gets the body `body()` built, which carries
+the message key and its arguments only. For a refused request to carry the sentence too, use
+`fastapi_license_dependency` on FastAPI; it raises `LicenseDenied`, so the handler above builds the
+response. On another framework, put your own middleware that calls `gate.require_usable()` in place
+of the adapter and build the response the same way.
+
 Message keys and their argument order: [messages.md](messages.md).
 
 ## Keeping it fresh
 
-A license that requires a heartbeat needs a scheduled refresh. The SDK writes the request and
+A judgement is made at the instant `verify` is given, and the gate answers with the last one it
+was handed. When the end date, the grace period, or the heartbeat deadline passes, the gate keeps
+letting requests through on the earlier judgement until the next one. So the scheduled work is two
+jobs.
+
+Re-verification runs for every license. It calls `verify(now)` on a schedule so the time that has
+passed reaches the gate, for a license that needs no heartbeat too, and while heartbeats keep
+failing.
+
+The heartbeat runs only for a license with `heartbeatRequired` set. The SDK writes the request and
 reads the answer; the schedule and the transport are yours.
 
 ```python
-def refresh_license() -> None:
+# Re-verification: every license. Brings the time that has passed to the gate.
+def reverify_license() -> None:
+    manager.verify(datetime.now(timezone.utc), integrity_ok=check_integrity())
+
+
+# Heartbeat: only a license that requires one.
+def send_heartbeat() -> None:
     payload = manager.gate.state().get("payload") or {}
     if not payload.get("heartbeatRequired"):
         return
@@ -274,7 +296,58 @@ before the first heartbeat.
 A failed heartbeat is not an error the deployment has to act on immediately. The license stays
 usable until the heartbeat window passes, which is the larger of `heartbeatToleranceHours` and
 `heartbeatIntervalHours`, read as 24 and 1 when the token carries zero. Log it and let the next
-run try again.
+run try again. Once the window passes, re-verification turns the judgement into `HEARTBEAT_OVERDUE`.
+
+The re-verification interval is the longest a passed deadline may go unenforced: on a 30-minute
+interval, a license whose end date or heartbeat deadline has passed keeps its earlier judgement for
+up to 30 minutes.
+
+## A compromised signing key
+
+When an issuer marks a signing key as compromised, the verification key list built into a
+customer's product carries that key with `compromised: true`. Taking the key out of the list
+would refuse every license signed under it as `INVALID_SIGNATURE`, including the ones issued
+properly before the compromise. Keep the key registered, and refuse with `SIGNING_KEY_COMPROMISED`
+only a token signed under it that asks for more than the deployment already held.
+
+The judgement does not make this comparison, because what it compares against is a record the
+application keeps. `KeyMaterial` carries no compromise mark; the application keeps the `kid` of
+each compromised key itself. The steps:
+
+1. On the first judgement after a compromised key is registered, store what the deployment holds
+   at that moment. When the judgement is usable, store its features, limits, expiry, and release
+   ceiling; when it is not, store that nothing was held. Store this once and never change it.
+2. Each time `verify`, `apply`, or `mark_revoked` returns a judgement, check whether the payload's `kid` is a compromised key.
+3. When a token signed under a compromised key asks for more than what was stored, build a
+   `SIGNING_KEY_COMPROMISED` judgement and hand it to the gate.
+
+A token asks for more in four ways: a feature that was not stored; a limit that was capped when
+stored and is now higher or missing (a missing limit is unlimited); an expiry later than the
+stored one, or none; a release ceiling higher than the stored one, or none. When nothing was held,
+every token signed under that key is refused. Compare release ceilings with `ReleaseVersions().is_within_ceiling`: compared
+as text, `3.10` ranks below `3.9`.
+
+```python
+judged = manager.verify(now, integrity_ok=check_integrity())
+payload = judged.get("payload")
+if payload and payload["kid"] in compromised_key_ids and not ceiling.covers(payload):
+    # asks for more than step 1 stored
+    manager.gate.refresh({
+        "status": "SIGNING_KEY_COMPROMISED",
+        "usable": False,
+        "errorCode": "LICENSE_SIGNING_KEY_COMPROMISED",
+        "denial": {"messageKey": "error.license.signingKeyCompromised", "arguments": []},
+        "nextWatermark": judged.get("nextWatermark"),
+        "availableFeatures": [],
+        "limits": {},
+        "graceExpiresAt": judged.get("graceExpiresAt"),
+        "heartbeatDeadline": judged.get("heartbeatDeadline"),
+        "payload": payload,
+    })
+```
+
+An application that uses this status has to translate `error.license.signingKeyCompromised`. The
+keys are listed in [messages.md](messages.md).
 
 ## The record and the other calls
 

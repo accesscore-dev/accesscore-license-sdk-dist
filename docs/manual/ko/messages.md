@@ -2,7 +2,7 @@
 
 코어는 키와 인자를 돌려주고, 번역은 애플리케이션이 합니다. SDK를 바인딩하는 언어마다 국제화 체계가 다르기 때문입니다. 코어에 문구까지 두면 언어가 하나 늘 때마다 문구도 함께 늘려야 합니다.
 
-애플리케이션은 아래 키를 자신이 지원하는 모든 로케일에 정의해야 합니다. 빠뜨린 키는 번역되지 않은 키 문자열 그대로 화면에 표시됩니다. 그 시점에 운영자는 이미 시스템을 사용할 수 없는 상태입니다.
+애플리케이션은 아래 키를 자신이 지원하는 모든 로케일에 정의해야 합니다. 빠뜨린 키는 번역되지 않은 키 문자열 그대로 화면에 표시됩니다. 그 시점에 운영자는 이미 시스템을 사용할 수 없는 상태입니다. `error.license.signingKeyCompromised`만 예외입니다. 유출된 서명 키를 처리하는 애플리케이션만 정의하면 됩니다.
 
 ## 메시지의 출처
 
@@ -49,7 +49,7 @@ sequenceDiagram
 | `error.license.integrityFailed` | 없음 | `INTEGRITY_FAILED` |
 | `error.license.signingKeyCompromised` | 없음 | `SIGNING_KEY_COMPROMISED`(호스트가 지정) |
 
-판정은 스스로 `SIGNING_KEY_COMPROMISED`를 내지 않습니다. 토큰을 비교할 기준이 호스트가 보관하는 기록이므로 이 상태는 호스트가 지정합니다. 호스트가 이 상태를 쓸 때 메시지를 번역할 수 있도록 키를 이 표에 둡니다.
+판정은 스스로 `SIGNING_KEY_COMPROMISED`를 내지 않습니다. 토큰을 비교할 기준이 호스트가 보관하는 기록이므로 이 상태는 호스트가 지정합니다. 호스트가 이 상태를 쓸 때 메시지를 번역할 수 있도록 키를 이 표에 둡니다. 유출 표시가 붙은 검증 키를 처리하지 않는 애플리케이션은 이 상태에 이르지 않으므로 이 키를 정의하지 않아도 됩니다. 처리 절차는 언어별 매뉴얼의 「유출된 서명 키 다루기」에 있습니다.
 
 숫자가 있어야 판단할 수 있는 사유에는 그 값을 함께 담습니다. 페이로드를 읽지 못해 값을 채울 수 없을 때는 빈 값을 표시하는 대신 `error.license.notValid`를 씁니다.
 
@@ -94,6 +94,7 @@ sequenceDiagram
 
 - 판정의 코드는 `LICENSE_` + 상태 이름입니다. `LICENSE_HEARTBEAT_OVERDUE`.
 - 게이트의 코드는 `LICENSE_FEATURE_NOT_LICENSED`, `LICENSE_FEATURE_NOT_ACTIVATED`, `LICENSE_QUOTA_EXCEEDED` 셋입니다.
+- 상태가 `RELEASE_NOT_ENTITLED`이면 게이트의 기능 검사는 기능 코드 대신 판정의 코드 `LICENSE_RELEASE_NOT_ENTITLED`와 메시지 키 `error.license.releaseNotEntitled`로 거절합니다. 기능은 라이선스에 들어 있고, 거절한 원인은 실행 중인 릴리스이기 때문입니다.
 
 ## 모든 어댑터가 쓰는 본문
 
@@ -105,5 +106,7 @@ sequenceDiagram
   "arguments": []
 }
 ```
+
+Java 어댑터 필터(`LicenseEnforcementFilter`, `LicenseEnforcementWebFilter`, `LicenseEnforcementRequestFilter`)에 `DenialMessages`를 넘기면 요청 로케일로 번역한 문장이 `message`에 함께 들어갑니다. 넘기지 않으면 `message`는 없습니다. Go와 Python 어댑터는 `message`를 쓰지 않습니다.
 
 어느 프레임워크를 거쳤든 형태는 하나입니다. 어댑터 계약 테스트가 바로 이 형태를 검사합니다. 그래서 새 어댑터를 추가하는 비용이 낮습니다. 어댑터는 게이트의 판정을 응답으로 변환할 뿐 아무것도 판단하지 않기 때문입니다.

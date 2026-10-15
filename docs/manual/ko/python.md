@@ -32,7 +32,7 @@ sequenceDiagram
 SDK는 Python 3.9 이상이 필요합니다.
 
 ```
-pip install https://github.com/accesscore-dev/accesscore-license-sdk-dist/releases/download/v1.1.0/accesscore_license-1.1.0-py3-none-any.whl
+pip install https://github.com/accesscore-dev/accesscore-license-sdk-dist/releases/download/v1.2.0/accesscore_license-1.2.0-py3-none-any.whl
 ```
 
 네이티브 코어는 wheel 안에 플랫폼당 한 디렉터리로 담깁니다. 디렉터리는 `linux-x86_64`, `linux-x86_64-musl`, `linux-aarch64`, `darwin-x86_64`, `darwin-aarch64`, `windows-x86_64`입니다. Linux에서는 musl 로더가 있으면 musl 코어를 읽습니다. `ACLIC_NATIVE_LIBC=musl` 또는 `glibc`로 직접 지정할 수도 있습니다. 공유 라이브러리를 어디서 가져올지 자체 정책으로 고정한 배포물은 `ACLIC_NATIVE_LIBRARY`로 파일을 지정하면 됩니다. 이 값은 읽어 들일 파일만 가리킬 뿐 신뢰할 키를 가리키지 않습니다.
@@ -40,7 +40,7 @@ pip install https://github.com/accesscore-dev/accesscore-license-sdk-dist/releas
 프레임워크 추가 설치(`fastapi`, `django`, `flask`)는 제품이 쓰는 프레임워크만 설치합니다. wheel은 PyPI에 없으므로 추가 설치 이름과 wheel 주소를 함께 적으세요.
 
 ```
-pip install "accesscore-license[fastapi] @ https://github.com/accesscore-dev/accesscore-license-sdk-dist/releases/download/v1.1.0/accesscore_license-1.1.0-py3-none-any.whl"
+pip install "accesscore-license[fastapi] @ https://github.com/accesscore-dev/accesscore-license-sdk-dist/releases/download/v1.2.0/accesscore_license-1.2.0-py3-none-any.whl"
 ```
 
 ## 제품이 구현할 클래스
@@ -205,14 +205,26 @@ async def handle(request, denied: LicenseDenied):
     )
 ```
 
+`asgi_license_gate`, `wsgi_license_gate`, `django_license_middleware`, `flask_register`가 막은 요청은 이 핸들러를 거치지 않고 `body()`가 만든 본문을 그대로 받습니다. 이 본문에는 메시지 키와 인자만 들어 있습니다. 막은 요청에도 번역된 문장을 담으려면 FastAPI에서는 `fastapi_license_dependency`를 쓰세요. 이 의존성은 `LicenseDenied`를 던지므로 위 핸들러가 응답을 만듭니다. 다른 프레임워크에서는 `gate.require_usable()`을 호출하는 미들웨어를 직접 두고 같은 방식으로 응답을 만드세요.
+
 메시지 키와 인자 순서는 [messages.md](messages.md)에 있습니다.
 
 ## 최신 상태 유지하기
 
-하트비트를 요구하는 라이선스는 주기적으로 갱신해야 합니다. 요청을 만들고 응답을 읽는 일은 SDK가 하고, 주기와 전송 방법은 애플리케이션이 정합니다.
+판정은 `verify`를 호출할 때 넘긴 시각으로 내리고, 게이트는 마지막 판정을 그대로 돌려줍니다. 종료일, 유예 기간, 하트비트 기한이 지나도 다음 판정 전까지 게이트는 이전 판정으로 요청을 통과시킵니다. 그래서 주기 작업을 둘로 나눕니다.
+
+재판정은 모든 라이선스에 둡니다. `verify(now)`를 주기적으로 호출해 지난 시간을 게이트에 반영합니다. 하트비트가 필요 없는 라이선스에도 두고, 하트비트가 계속 실패하는 동안에도 실행합니다.
+
+하트비트는 `heartbeatRequired`가 켜진 라이선스에만 둡니다. 요청을 만들고 응답을 읽는 일은 SDK가 하고, 주기와 전송 방법은 애플리케이션이 정합니다.
 
 ```python
-def refresh_license() -> None:
+# 재판정: 모든 라이선스. 지난 시간을 게이트에 반영한다.
+def reverify_license() -> None:
+    manager.verify(datetime.now(timezone.utc), integrity_ok=check_integrity())
+
+
+# 하트비트: 하트비트를 요구하는 라이선스만.
+def send_heartbeat() -> None:
     payload = manager.gate.state().get("payload") or {}
     if not payload.get("heartbeatRequired"):
         return
@@ -243,7 +255,42 @@ def refresh_license() -> None:
 
 하트비트 응답에는 새 토큰만 있고 활성화 비밀값은 없습니다. 저장된 기록을 유지한 채 `licenseToken`만 바꾸세요. SDK는 하트비트에 성공한 시각을 직접 기록하지 않습니다. 저장하는 기록에 `lastHeartbeatAt`을 넣어야 하며, 기한은 이 시각부터 계산합니다. 첫 하트비트 전에는 `activatedAt`부터 계산합니다.
 
-하트비트가 한 번 실패했다고 곧바로 대응할 필요는 없습니다. 하트비트 허용 시간이 지나기 전까지 라이선스는 계속 유효합니다. 허용 시간은 `heartbeatToleranceHours`와 `heartbeatIntervalHours` 가운데 긴 쪽이며, 토큰의 값이 0이면 각각 24시간과 1시간으로 계산합니다. 기록만 남기고 다음 실행에 맡기면 됩니다.
+하트비트가 한 번 실패했다고 곧바로 대응할 필요는 없습니다. 하트비트 허용 시간이 지나기 전까지 라이선스는 계속 유효합니다. 허용 시간은 `heartbeatToleranceHours`와 `heartbeatIntervalHours` 가운데 긴 쪽이며, 토큰의 값이 0이면 각각 24시간과 1시간으로 계산합니다. 기록만 남기고 다음 실행에 맡기면 됩니다. 허용 시간이 지나면 재판정이 판정을 `HEARTBEAT_OVERDUE`로 바꿉니다.
+
+재판정 주기는 기한이 지난 뒤 게이트가 거절로 바뀌기까지 허용할 최대 시간입니다. 30분 주기라면 종료일이나 하트비트 기한이 지난 뒤 최대 30분 동안 이전 판정이 유지됩니다.
+
+## 유출된 서명 키 다루기
+
+발급자가 서명 키를 유출로 표시하면, 고객 제품에 넣는 검증 키 목록에서 그 키에 유출 표시(`compromised: true`)가 붙습니다. 그 키를 목록에서 빼면 유출 전에 정상으로 발급된 라이선스까지 `INVALID_SIGNATURE`로 거절됩니다. 키는 그대로 등록해 두고, 그 키로 서명된 토큰이 이미 보유한 범위보다 더 많이 요구할 때만 `SIGNING_KEY_COMPROMISED`로 거절하세요.
+
+판정은 이 비교를 하지 않습니다. 비교 기준이 애플리케이션이 보관하는 기록이기 때문입니다. 그래서 `KeyMaterial`에는 유출 표시를 넣지 않고, 유출된 키의 `kid` 목록은 애플리케이션이 따로 보관합니다. 절차는 다음과 같습니다.
+
+1. 유출 표시가 붙은 키를 처음 등록한 뒤 첫 판정에서 그 시점에 보유한 범위를 저장합니다. 판정이 사용 가능이면 기능 목록, 한도, 만료 시각, 릴리스 상한을 저장하고, 사용 가능이 아니면 보유한 범위가 없다고 저장합니다. 이 기록은 한 번만 저장하고 이후에 바꾸지 않습니다.
+2. `verify`, `apply`, `mark_revoked`가 판정을 돌려줄 때마다 페이로드의 `kid`가 유출된 키인지 확인합니다.
+3. 유출된 키로 서명된 토큰이 저장한 범위를 넘으면 `SIGNING_KEY_COMPROMISED` 판정을 만들어 게이트에 넘깁니다.
+
+토큰이 저장한 범위를 넘는 경우는 넷입니다. 저장하지 않은 기능이 있는 경우, 저장할 때 상한이 있던 한도가 더 크거나 빠진 경우(빠진 한도는 무제한입니다), 저장한 만료 시각보다 늦거나 만료 시각이 없는 경우, 저장한 릴리스 상한보다 높거나 상한이 없는 경우입니다. 보유한 범위가 없다고 저장했다면 그 키로 서명된 토큰은 모두 거절합니다. 릴리스 상한은 `ReleaseVersions().is_within_ceiling`으로 비교하세요. 문자열로 비교하면 `3.10`이 `3.9`보다 낮게 나옵니다.
+
+```python
+judged = manager.verify(now, integrity_ok=check_integrity())
+payload = judged.get("payload")
+if payload and payload["kid"] in compromised_key_ids and not ceiling.covers(payload):
+    # 1번에서 저장한 범위를 넘었다
+    manager.gate.refresh({
+        "status": "SIGNING_KEY_COMPROMISED",
+        "usable": False,
+        "errorCode": "LICENSE_SIGNING_KEY_COMPROMISED",
+        "denial": {"messageKey": "error.license.signingKeyCompromised", "arguments": []},
+        "nextWatermark": judged.get("nextWatermark"),
+        "availableFeatures": [],
+        "limits": {},
+        "graceExpiresAt": judged.get("graceExpiresAt"),
+        "heartbeatDeadline": judged.get("heartbeatDeadline"),
+        "payload": payload,
+    })
+```
+
+이 상태를 쓰는 애플리케이션은 `error.license.signingKeyCompromised`를 번역해 두어야 합니다. 키 목록은 [messages.md](messages.md)에 있습니다.
 
 ## 등록 기록과 그 밖의 호출
 
