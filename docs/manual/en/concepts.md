@@ -56,8 +56,9 @@ Decoded, a payload looks like this:
   "features": ["ATTENDANCE", "VISITOR"],
   "limits": { "USERS": 200, "READER_PORTS": 0 },
   "heartbeatRequired": true,
-  "heartbeatIntervalDays": 7,
-  "heartbeatToleranceDays": 21
+  "heartbeatIntervalHours": 1,
+  "heartbeatToleranceHours": 3,
+  "metadata": {}
 }
 ```
 
@@ -67,6 +68,11 @@ ceilings, and `expiresAt` plus `gracePeriodDays` is how long it lasts.
 A perpetual sale carries no `expiresAt` at all, and a license without one never expires — the
 expiry and grace checks are skipped and nothing else about the judgement changes. What such a
 license stops receiving is new releases, and that ceiling is `maxRelease`.
+
+A token without `channel` is read as `PRODUCTION`. The channel changes two checks. The grace
+period applies only to `PRODUCTION`: a `DEV` license stops at `expiresAt`. The wildcard
+fingerprint `"*"`, which matches any machine, is accepted only on `DEV`; a `PRODUCTION` token
+carrying it is refused as `INVALID_SIGNATURE`.
 
 ## Activation, step by step
 
@@ -81,32 +87,36 @@ sequenceDiagram
     participant Srv as License server
 
     Op->>App: enters the product key
-    App->>SDK: fingerprint()
-    Note over SDK: reads the machine identifiers<br/>and hashes each into sha256:…
-    SDK-->>App: ["sha256:f9c8…", "sha256:1fb1…"]
+    App->>SDK: activationRequest(productKey, now)
+    Note over SDK: reads the machine identifiers,<br/>hashes each into sha256:…,<br/>builds the body and a nonce
+    SDK-->>App: { method, path, body, headers, nonce }
 
-    App->>SDK: activationRequest(productKey, fingerprints, release)
-    Note over SDK: builds the body and a nonce
-    SDK-->>App: { body, nonce }
-
-    App->>Srv: POST /activations  (your HTTP client, your timeouts)
+    App->>Srv: POST /api/v1/activations  (your HTTP client, your timeouts)
     Note over Srv: finds the contract, takes a seat,<br/>signs a token with the private key
-    Srv-->>App: { licenseToken, activationSecret, activationId }
+    Srv-->>App: { body: { licenseToken, activationSecret, activationId } }
 
-    App->>SDK: activationResponse(answer, nonce, fingerprints)
-    Note over SDK: checks the nonce came back,<br/>the machine matches,<br/>and the payload verifies
-    SDK-->>App: the verified record
+    App->>SDK: interpret(ACTIVATE, status, answer, nonce)
+    Note over SDK: checks the signature,<br/>that the nonce came back,<br/>and that the machine matches
+    SDK-->>App: the verified token and credentials
 
-    App->>App: store the record (Store.save)
-    App->>SDK: evaluate(record, now)
+    App->>SDK: apply(record, now)
+    Note over SDK: saves it through your Store,<br/>judges it, refreshes the gate
     SDK-->>App: VALID, features, limits
-    App->>App: gate.refresh(evaluation)
     App-->>Op: licensed — the features open
 ```
 
-Two things are worth reading twice. **The SDK never opens a socket** — step 6 is your HTTP
-client, with your timeouts, your proxy, and your retry policy. And **the nonce** in step 3 comes
-back in step 8: a reply captured from an earlier activation cannot be replayed at this one.
+Two things are worth reading twice. **The SDK never opens a socket** — step 4 is your HTTP
+client, with your timeouts, your proxy, and your retry policy. And **the nonce** from step 3 has
+to come back inside the signed token, which step 6 checks: a reply captured from an earlier
+activation cannot be replayed at this one.
+
+`interpret` does not throw on a refusal; it returns an outcome that names the reason. An HTTP
+202 means the server is holding the activation for an operator (`PENDING_APPROVAL`). A refusal
+names its reason in `errorDetail.reason` (`APPROVAL_DENIED` when an operator refused the
+activation), or is read from the status: 404 is
+`UNKNOWN_PRODUCT_KEY`, 409 `SEAT_EXHAUSTED`, 403 `SUSPENDED`, 410 `REVOKED`. An answer whose
+signature, nonce, or machine does not check out is `INVALID_SIGNATURE`, `NONCE_MISMATCH`, or
+`FINGERPRINT_MISMATCH`.
 
 After the first activation, every later request is signed with the activation secret, carried in
 `X-Activation-Signature` as base64 HMAC-SHA256 over the body bytes as sent.
@@ -124,7 +134,7 @@ sequenceDiagram
     participant Portal as Operator portal<br/>(on the outside)
 
     Op->>App: enters the product key
-    App->>SDK: activationRequest(productKey, fingerprints, release)
+    App->>SDK: activationRequest(productKey, now)
     SDK-->>App: { body, nonce }
     App-->>Op: request.json  (and the nonce stays behind)
     Note over Op: carries the file out —<br/>USB, email, a ticket
@@ -134,9 +144,9 @@ sequenceDiagram
     Note over Op: carries it back in
 
     Op->>App: uploads response.json
-    App->>SDK: activationResponse(answer, nonce, fingerprints)
-    SDK-->>App: the verified record
-    App->>App: store, evaluate, refresh the gate
+    App->>SDK: interpret(ACTIVATE, 200, response.json, nonce)
+    SDK-->>App: the verified token and credentials
+    App->>SDK: apply(record, now)
     App-->>Op: licensed
 ```
 
@@ -198,34 +208,47 @@ sequenceDiagram
     participant SDK as License SDK
     participant Srv as License server
 
-    loop every heartbeatIntervalDays
+    loop every heartbeatIntervalHours
         Sch->>App: time to refresh
-        App->>SDK: heartbeatRequest(record, fingerprints, release)
-        SDK-->>App: { body, signature }
-        App->>Srv: POST /heartbeats  (X-Activation-Signature)
+        App->>SDK: heartbeatRequest(now)
+        SDK-->>App: { method, path, body, headers, nonce }
+        App->>Srv: POST /api/v1/activations/{activationId}/heartbeat<br/>(X-Activation-Signature in the headers)
 
-        alt the server answers
-            Srv-->>App: { licenseToken, status: ACTIVE }
-            App->>SDK: heartbeatResponse(answer)
-            SDK-->>App: the refreshed record
-            App->>App: store it, re-evaluate, refresh the gate
+        alt the server answers 2xx
+            Srv-->>App: { body: { licenseToken } }
+            App->>SDK: interpret(HEARTBEAT, status, answer, nonce)
+            SDK-->>App: the verified token
+            App->>SDK: apply(record with the new token and lastHeartbeatAt, now)
+            Note over SDK: saves it, judges it, refreshes the gate
         else the server revoked it
-            Srv-->>App: { status: REVOKED }
-            App->>App: store the revocation stamp
-            Note over App: the next judgement returns REVOKED
+            Srv-->>App: 410, or errorDetail.reason REVOKED
+            App->>SDK: interpret(…) returns REVOKED
+            App->>SDK: markRevoked(now)
+            Note over SDK: stores the revocation stamp;<br/>the judgement returns REVOKED
         else the network is down
             Srv--xApp: timeout
-            Note over App: nothing changes yet —<br/>the deployment keeps running until<br/>heartbeatToleranceDays passes
+            Note over App: nothing changes yet —<br/>the deployment keeps running until<br/>the heartbeat window passes
         end
     end
 ```
 
-Tolerance is deliberately larger than the interval. A site whose uplink is down for a weekend
-keeps working; one that has not checked in for three weeks does not.
+Both windows are counted in hours. The deadline is the last successful heartbeat plus the wider
+of the tolerance and the interval; before the first heartbeat it is counted from `activatedAt`.
+The SDK does not record a heartbeat by itself: the record you pass to `apply` carries
+`lastHeartbeatAt`. A judgement exactly at the deadline still passes. Tolerance is deliberately larger than the interval: a license with a
+one-hour interval and a three-hour tolerance keeps working through two failed refreshes, and only
+a deployment that has not checked in for three hours stops.
+
+A token carrying zero is read with defaults: one hour for the interval, 24 hours for the
+tolerance. That covers an issuer that set no window, and a token issued by 1.0.x, whose fields
+were days and are no longer read. A deployment holding a 1.0.x token keeps working if a heartbeat succeeds within 24
+hours of its last one, because that heartbeat returns a new token.
 
 ## The judgement
 
-Fifteen checks in one order. The first that fails decides the status:
+Fifteen checks in one order. Up to step 11, the first that fails decides the status. Step 12
+does not stop the judgement: a release above the ceiling turns the status into
+`RELEASE_NOT_ENTITLED`, and steps 13 and 14 still run and can replace it.
 
 ```mermaid
 flowchart TD
@@ -252,13 +275,12 @@ flowchart TD
     J -->|ok| K[11. expiry and grace]
     K -->|past grace| KX[EXPIRED]
     K -->|usable| L[12. the release ceiling]
-    L -->|above| LX[RELEASE_NOT_ENTITLED]
-    L -->|ok| M[13. the clock watermark]
+    L -->|within, or above:<br/>RELEASE_NOT_ENTITLED| M[13. the clock watermark]
     M -->|behind| MX[CLOCK_TAMPERED]
     M -->|ok| N[14. the heartbeat deadline]
     N -->|passed| NX[HEARTBEAT_OVERDUE]
     N -->|ok| O[15. the watermark advances]
-    O --> OK[VALID or GRACE_PERIOD]
+    O --> OK[VALID, GRACE_PERIOD,<br/>or RELEASE_NOT_ENTITLED]
 ```
 
 The order is the design. The schema number is read before the signature: a format this
@@ -266,12 +288,19 @@ deployment cannot read is not worth computing a signature over. The product code
 after the signature and before the machine binding — if the token belongs to another product,
 whether the machine matches is not a question worth asking.
 
-### One schema written, a range read
+Steps 13 and 14 run only when step 11 left a usable status, so an expired license is settled
+without consulting a clock or a heartbeat. Step 13 refuses only a clock more than one hour
+behind the watermark; ordinary drift passes. Step 15 is reached only by a usable judgement, and
+it moves the watermark forward, never back.
 
-This build issues under `SCHEMA_VERSION` alone and reads every schema from
-`MIN_READABLE_SCHEMA_VERSION` up to it. Accepting only its own number would mean that the moment
-a product upgrades the SDK, every license it has already sold is refused — and on a closed
-network there is no reissuing them.
+### One range written and read
+
+This build reads every schema from `MIN_READABLE_SCHEMA_VERSION` (1) up to `SCHEMA_VERSION` (2),
+and issues across the same range. Accepting only its own number would mean that the moment a
+product upgrades the SDK, every license it has already sold is refused — and on a closed network
+there is no reissuing them. Issuing across the range lets one issuer serve products that embed
+different SDKs. Schema 1 has no way to say a license never expires, so a schema-1 payload needs
+`expiresAt`.
 
 A schema bump may therefore only **add optional fields or relax a constraint**. Removing a field,
 making an optional one required, or reinterpreting an existing value is not a bump: it is raising
@@ -282,6 +311,17 @@ When the schema rises, a verifier carrying an older SDK cannot read the new toke
 verifying side upgrades first, and only then does the issuing side start writing the new
 schema.**
 
+1.1.0 is an exception to this rule. It replaced `heartbeatIntervalDays` and
+`heartbeatToleranceDays` with `heartbeatIntervalHours` and `heartbeatToleranceHours` and gave
+zero a meaning, while staying on schema 2 in a minor release. The day fields are no longer read,
+so a 1.0.x token is judged with the defaults in [The heartbeat](#the-heartbeat). The order runs
+the same way as a schema bump: a 1.0.x verifier reading a 1.1.0 token finds no day fields, puts
+the deadline at the last heartbeat itself, and refuses with `HEARTBEAT_OVERDUE`. **Upgrade every
+deployment that verifies to 1.1.0 before the issuing server.** Until the issuing server moves,
+the tokens it returns still carry day fields, so an upgraded deployment reads them with the
+defaults: a heartbeat has to succeed at least every 24 hours, whatever tolerance the license
+was sold with.
+
 ## Statuses
 
 | Status | Meaning | Usable | What an operator should do |
@@ -290,14 +330,14 @@ schema.**
 | `GRACE_PERIOD` | expired, inside the grace period | ● | renew before the grace period ends |
 | `RELEASE_NOT_ENTITLED` | above the contract ceiling | ● | extend the contract, or roll back the release |
 | `EXPIRED` | past the grace period | ○ | renew and re-activate |
-| `INVALID_SIGNATURE` | signature, algorithm, or a production wildcard | ○ | the license is not for this build — reissue |
+| `INVALID_SIGNATURE` | signature, algorithm, key, or a production wildcard | ○ | the license is not for this build — reissue |
 | `MACHINE_MISMATCH` | stamped for other machines | ○ | move the seat on the license server |
 | `FINGERPRINT_UNAVAILABLE` | not one identifier could be read | ○ | mount the host identifiers into the container |
 | `NOT_ACTIVATED` | nothing registered | ○ | activate with a product key |
 | `NOT_LOADED` | a token that cannot be read | ○ | the stored record is damaged — re-activate |
 | `SCHEMA_UNSUPPORTED` | a schema this build does not read | ○ | upgrade the deployment, or have it reissued |
 | `REVOKED` | the server revoked it | ○ | ask the vendor why |
-| `CLOCK_TAMPERED` | the clock moved back past the watermark | ○ | fix the clock |
+| `CLOCK_TAMPERED` | the clock is more than an hour behind the watermark | ○ | fix the clock |
 | `INTEGRITY_FAILED` | the binary is not what it should be | ○ | reinstall from a trusted build |
 | `HEARTBEAT_OVERDUE` | a required refresh did not arrive | ○ | restore the connection, or refresh by hand |
 | `PRODUCT_MISMATCH` | another product's license | ○ | register the right license |
@@ -305,6 +345,8 @@ schema.**
 
 `RELEASE_NOT_ENTITLED` stays usable on purpose. A ceiling that closed the state gate would stop
 access control at the door; what it costs instead is the feature list, which comes back empty.
+The limits stay as the license sold them: a quota with no entry is unlimited, so emptying them
+would lift every ceiling.
 
 `SIGNING_KEY_COMPROMISED` is the one status the judgement above never reaches on its own. A
 deployment carrying a key whose signing half is known to be in someone else's hands measures what
@@ -336,6 +378,9 @@ passes when  matched ≥ 1  and  matched ≥ ceil(|collected| / 2)
 | Only the machine-id copied elsewhere | 3 | 1 | refuse |
 | Nothing readable | 0 | 0 | `FINGERPRINT_UNAVAILABLE` |
 
+Each identifier is trimmed and lowercased before it is hashed. Firmware placeholders such as
+`To be filled by O.E.M.` and the all-zero UUID are dropped, and duplicates count once.
+
 Measuring against the stamped count instead would leave an environment that reads fewer
 identifiers no way to pass at all. MAC addresses are not used: `--mac-address` sets one to
 whatever a caller likes.
@@ -352,10 +397,11 @@ license is wrong.
 
 ## Signatures and keys
 
-Issuance uses Ed25519 — a 64-byte signature and a 32-byte public key keep a hand-carried token
-short and make embedding the verification key cost nothing. Verification also reads RSA-4096
-PSS, so a customer who must keep the private key in a hardware module is served without touching
-a deployed verifier.
+Issuance uses Ed25519 by default — a 64-byte signature and a 32-byte public key keep a
+hand-carried token short and make embedding the verification key cost nothing. RSA-PSS with
+SHA-256 (`RSA-PSS-SHA256`) is the other algorithm, so a customer who must keep the private key
+in a hardware module is served without touching a deployed verifier. An RSA key must be 3072
+bits or more; the SDK generates 4096-bit keys.
 
 `alg` names the algorithm and `kid` names the key. Both sit under the signature, so changing
 either breaks it — but only if the checks run in this order:
@@ -377,7 +423,9 @@ The allow-list check and the pairing check are what close algorithm confusion. W
 token could declare a weak algorithm and be verified under it.
 
 A `kid` is `<family>-<year>-<serial>`, for example `acps-2026-01` — an ordered name an operator
-reads against the ledger, not a random one. A deployment may carry several keys at once, which
+reads against the ledger, not a random one. The family is lowercase letters and digits, the year
+four digits, and the serial digits that keep their written width: `-01` and `-1` are different
+keys. A deployment may carry several keys at once, which
 is what makes a rotation possible:
 
 ```mermaid
@@ -402,6 +450,17 @@ sequenceDiagram
 The verification key is fixed in the deployment's binary. A path a deployment could redirect
 would let a customer verify a license they minted themselves, and at that moment the signature
 check defends nothing. Rotation is a rebuild.
+
+## Product keys and release ceilings
+
+A product key is `<PREFIX>-XXXXX-XXXXX-XXXXX-XXXXX-XXXXX`. The prefix names a product family:
+two to eight capital letters or digits. The groups use an alphabet without `I`, `L`, `O`, and
+`U`, and the last group is a checksum over the rest, so a typo is caught where it is typed.
+
+A release ceiling is compared segment by segment. A missing segment counts as zero, so `3.2`
+and `3.2.0` are the same release, and `3.2.1` is above a ceiling of `3.2`. Numeric segments
+compare as numbers, so `3.10` is above `3.2`; anything else compares as text, which puts
+`3.2.0-rc1` above `3.2.0`. An absent or blank ceiling is no ceiling.
 
 ## The gate
 

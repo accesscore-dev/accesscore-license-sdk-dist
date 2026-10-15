@@ -20,7 +20,8 @@ gate.requireFeature("ATTENDANCE") may it use this module — or refuse, with a m
 gate.checkQuota("USERS", 199)     is there room for one more, or is the ceiling reached
 ```
 
-The names follow each language: `requireFeature` in Java and Go, `require_feature` in Python.
+The names follow each language: `requireFeature` and `checkQuota` in Java, `RequireFeature` and
+`CheckQuota` in Go, `require_feature` and `check_quota` in Python.
 
 Everything else — signatures, machine binding, expiry, grace periods, release ceilings,
 heartbeats — happens behind those three, in one place, the same way in every language.
@@ -59,7 +60,7 @@ The core travels inside each package, so nothing has to be installed beside your
 | Language | Where it comes from | Token |
 | --- | --- | --- |
 | Java | `dev.accesscore:license-sdk`, from the GitHub Packages registry | `read:packages` — see [the Java guide](java.md) |
-| Python | the wheel on [the release](https://github.com/accesscore-dev/accesscore-license-sdk-dist/releases/tag/v1.0.9) | none |
+| Python | the wheel on [the release](https://github.com/accesscore-dev/accesscore-license-sdk-dist/releases/tag/v1.1.0) | none |
 | Go | `github.com/accesscore-dev/accesscore-license-sdk-dist/packages/go` | none |
 
 Every language is also attached to the release as a file — the jar, the wheel, the Go module,
@@ -73,7 +74,7 @@ that cannot reach a registry, or would rather not, takes the file.
 | `NOT_ACTIVATED` | nothing is registered yet — activate with a product key |
 | `FINGERPRINT_UNAVAILABLE` | a container without the host machine identifiers mounted |
 | `MACHINE_MISMATCH` | the license belongs to a different host — move the seat on the server |
-| `SCHEMA_UNSUPPORTED` | the license is newer than this build — upgrade, or have it reissued |
+| `SCHEMA_UNSUPPORTED` | the license is newer than this build, or older than it reads — upgrade, or have it reissued |
 | `HEARTBEAT_OVERDUE` | the deployment has not checked in within the tolerated window |
 | `RELEASE_NOT_ENTITLED` | the deployment was upgraded past what the contract covers |
 

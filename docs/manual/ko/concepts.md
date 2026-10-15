@@ -51,14 +51,17 @@ base64url(payload).base64url(signature)
   "features": ["ATTENDANCE", "VISITOR"],
   "limits": { "USERS": 200, "READER_PORTS": 0 },
   "heartbeatRequired": true,
-  "heartbeatIntervalDays": 7,
-  "heartbeatToleranceDays": 21
+  "heartbeatIntervalHours": 1,
+  "heartbeatToleranceHours": 3,
+  "metadata": {}
 }
 ```
 
 애플리케이션이 게이트할 값은 모두 여기 있습니다. `features`가 기능 목록이고, `limits`가 상한이며, `expiresAt`과 `gracePeriodDays`가 유효 기간을 정합니다.
 
 영구 판매는 `expiresAt`을 아예 싣지 않으며, 이 필드가 없는 라이선스는 만료하지 않습니다. 만료와 유예 검사만 건너뛰고 나머지 판정은 그대로입니다. 그런 라이선스가 더 받지 못하는 것은 새 릴리스이고, 그 상한은 `maxRelease`입니다.
+
+`channel`이 없는 토큰은 `PRODUCTION`으로 읽습니다. 채널에 따라 검사 두 가지가 달라집니다. 유예 기간은 `PRODUCTION`에만 적용하므로 `DEV` 라이선스는 `expiresAt`에서 멈춥니다. 모든 머신과 일치하는 와일드카드 핑거프린트 `"*"`는 `DEV`에서만 받으며, 이 값을 실은 `PRODUCTION` 토큰은 `INVALID_SIGNATURE`로 거절합니다.
 
 ## 활성화, 한 단계씩
 
@@ -73,34 +76,31 @@ sequenceDiagram
     participant Srv as 라이선스 서버
 
     Op->>App: 제품 키 입력
-    App->>SDK: fingerprint()
-    Note over SDK: 머신 식별자를 읽어<br/>각각 sha256:… 으로 해시
-    SDK-->>App: ["sha256:f9c8…", "sha256:1fb1…"]
+    App->>SDK: activationRequest(제품 키, now)
+    Note over SDK: 머신 식별자를 읽어<br/>각각 sha256:… 으로 해시,<br/>본문과 논스 생성
+    SDK-->>App: { method, path, body, headers, nonce }
 
-    App->>SDK: activationRequest(제품 키, 지문, 릴리스)
-    Note over SDK: 본문과 논스 생성
-    SDK-->>App: { body, nonce }
-
-    App->>Srv: POST /activations  (애플리케이션의 HTTP 클라이언트와 타임아웃)
+    App->>Srv: POST /api/v1/activations  (애플리케이션의 HTTP 클라이언트와 타임아웃)
     Note over Srv: 계약을 찾아 좌석을 잡고<br/>개인키로 토큰에 서명
-    Srv-->>App: { licenseToken, activationSecret, activationId }
+    Srv-->>App: { body: { licenseToken, activationSecret, activationId } }
 
-    App->>SDK: activationResponse(응답, nonce, 지문)
-    Note over SDK: 논스가 돌아왔는지,<br/>머신이 일치하는지,<br/>페이로드가 검증되는지 확인
-    SDK-->>App: 검증된 등록 기록
+    App->>SDK: interpret(ACTIVATE, 상태 코드, 응답, nonce)
+    Note over SDK: 서명이 맞는지,<br/>논스가 돌아왔는지,<br/>머신이 일치하는지 확인
+    SDK-->>App: 검증된 토큰과 자격 증명
 
-    App->>App: 기록 저장 (Store.save)
-    App->>SDK: evaluate(기록, now)
+    App->>SDK: apply(등록 기록, now)
+    Note over SDK: Store로 저장하고<br/>판정한 뒤 게이트 갱신
     SDK-->>App: VALID, 기능 목록, 한도
-    App->>App: gate.refresh(판정)
     App-->>Op: 라이선스 적용 — 기능이 열립니다
 ```
 
 여기서 짚어둘 곳이 두 군데입니다.
 
-**SDK는 소켓을 열지 않습니다.** 6번은 애플리케이션이 직접 보내는 요청이고, 타임아웃도 프록시도 재시도 정책도 애플리케이션이 정합니다.
+**SDK는 소켓을 열지 않습니다.** 4번은 애플리케이션이 직접 보내는 요청이고, 타임아웃도 프록시도 재시도 정책도 애플리케이션이 정합니다.
 
-**3번에서 만든 논스가 8번에서 돌아옵니다.** 그래서 예전 활성화에서 가로챈 응답을 이번 활성화에 다시 쓸 수 없습니다.
+**3번에서 받은 논스는 서명된 토큰에 담겨 돌아와야 하고, 6번에서 이를 확인합니다.** 그래서 예전 활성화에서 가로챈 응답을 이번 활성화에 다시 쓸 수 없습니다.
+
+`interpret`는 거절을 예외로 던지지 않고, 사유를 담은 결과를 돌려줍니다. HTTP 202는 서버가 운영자 승인을 기다리며 활성화를 보류했다는 뜻입니다(`PENDING_APPROVAL`). 거절 사유는 `errorDetail.reason`에서 읽고(운영자가 활성화를 거절했다면 `APPROVAL_DENIED`), 사유가 없으면 상태 코드로 정합니다. 404는 `UNKNOWN_PRODUCT_KEY`, 409는 `SEAT_EXHAUSTED`, 403은 `SUSPENDED`, 410은 `REVOKED`입니다. 서명, 논스, 머신 가운데 하나라도 맞지 않는 응답은 각각 `INVALID_SIGNATURE`, `NONCE_MISMATCH`, `FINGERPRINT_MISMATCH`로 돌려줍니다.
 
 첫 활성화 이후로는 모든 요청에 활성화 비밀값으로 서명합니다. 보내는 본문 바이트를 base64 HMAC-SHA256으로 계산해 `X-Activation-Signature` 헤더에 실으면 됩니다.
 
@@ -117,7 +117,7 @@ sequenceDiagram
     participant Portal as 운영자 포털<br/>(망 바깥)
 
     Op->>App: 제품 키 입력
-    App->>SDK: activationRequest(제품 키, 지문, 릴리스)
+    App->>SDK: activationRequest(제품 키, now)
     SDK-->>App: { body, nonce }
     App-->>Op: request.json  (논스는 배포물에 남음)
     Note over Op: 파일을 들고 나갑니다.<br/>USB, 이메일, 티켓
@@ -127,9 +127,9 @@ sequenceDiagram
     Note over Op: 다시 들고 들어옵니다
 
     Op->>App: response.json 업로드
-    App->>SDK: activationResponse(응답, nonce, 지문)
-    SDK-->>App: 검증된 등록 기록
-    App->>App: 저장, 판정, 게이트 갱신
+    App->>SDK: interpret(ACTIVATE, 200, response.json, nonce)
+    SDK-->>App: 검증된 토큰과 자격 증명
+    App->>SDK: apply(등록 기록, now)
     App-->>Op: 라이선스 적용
 ```
 
@@ -185,33 +185,37 @@ sequenceDiagram
     participant SDK as License SDK
     participant Srv as 라이선스 서버
 
-    loop heartbeatIntervalDays 마다
+    loop heartbeatIntervalHours 마다
         Sch->>App: 갱신할 시각
-        App->>SDK: heartbeatRequest(기록, 지문, 릴리스)
-        SDK-->>App: { body, signature }
-        App->>Srv: POST /heartbeats  (X-Activation-Signature)
+        App->>SDK: heartbeatRequest(now)
+        SDK-->>App: { method, path, body, headers, nonce }
+        App->>Srv: POST /api/v1/activations/{activationId}/heartbeat<br/>(headers에 X-Activation-Signature)
 
-        alt 서버가 응답
-            Srv-->>App: { licenseToken, status: ACTIVE }
-            App->>SDK: heartbeatResponse(응답)
-            SDK-->>App: 갱신된 기록
-            App->>App: 저장, 재판정, 게이트 갱신
+        alt 서버가 2xx로 응답
+            Srv-->>App: { body: { licenseToken } }
+            App->>SDK: interpret(HEARTBEAT, 상태 코드, 응답, nonce)
+            SDK-->>App: 검증된 토큰
+            App->>SDK: apply(새 토큰과 lastHeartbeatAt을 담은 기록, now)
+            Note over SDK: 저장, 판정, 게이트 갱신
         else 서버가 폐기
-            Srv-->>App: { status: REVOKED }
-            App->>App: 폐기 표식 저장
-            Note over App: 다음 판정은 REVOKED
+            Srv-->>App: 410, 또는 errorDetail.reason REVOKED
+            App->>SDK: interpret(…) 결과 REVOKED
+            App->>SDK: markRevoked(now)
+            Note over SDK: 폐기 표식 저장.<br/>판정 결과는 REVOKED
         else 네트워크 끊김
             Srv--xApp: 타임아웃
-            Note over App: 아직 아무것도 바뀌지 않음.<br/>heartbeatToleranceDays가 지날 때까지<br/>배포물은 계속 동작
+            Note over App: 아직 아무것도 바뀌지 않음.<br/>하트비트 기한이 지날 때까지<br/>배포물은 계속 동작
         end
     end
 ```
 
-허용 기간을 주기보다 길게 잡은 것은 의도한 설정입니다. 주말 내내 회선이 끊긴 현장은 계속 돌아가고, 3주가 넘도록 연락이 없는 배포물만 멈춥니다.
+주기와 허용 기간은 시간 단위입니다. 기한은 마지막으로 성공한 하트비트 시각에 허용 기간과 주기 가운데 긴 쪽을 더한 시각이고, 첫 하트비트 전에는 `activatedAt`부터 계산합니다. SDK는 하트비트 시각을 직접 기록하지 않습니다. 애플리케이션이 `apply`에 넘기는 기록에 `lastHeartbeatAt`을 담아야 합니다. 기한과 같은 시각의 판정은 통과합니다. 허용 기간을 주기보다 길게 설정하는 것은 의도한 동작입니다. 주기 1시간 · 허용 기간 3시간인 라이선스는 하트비트가 두 번 실패해도 계속 동작하고, 3시간이 넘도록 연락이 없는 배포물만 멈춥니다.
+
+토큰의 주기가 0이면 1시간, 허용 기간이 0이면 24시간으로 계산합니다. 발급하는 쪽이 값을 정하지 않았거나, 필드가 일 단위이던 1.0.x가 발급한 토큰이 이 경우입니다. 일 단위 필드는 더 이상 읽지 않습니다. 1.0.x 토큰을 저장한 배포물은 마지막 하트비트에서 24시간 안에 하트비트에 성공하면 새 토큰을 받아 계속 동작합니다.
 
 ## 판정
 
-검사 열다섯 개가 정해진 순서로 돕니다. 가장 먼저 걸리는 검사가 상태를 결정합니다.
+검사 열다섯 개를 정해진 순서로 실행합니다. 11번까지는 가장 먼저 걸리는 검사가 상태를 결정합니다. 12번은 판정을 멈추지 않습니다. 릴리스가 상한을 넘으면 상태를 `RELEASE_NOT_ENTITLED`로 바꾸고, 13번과 14번은 그대로 실행되어 이 상태를 다른 상태로 바꿀 수 있습니다.
 
 ```mermaid
 flowchart TD
@@ -238,24 +242,27 @@ flowchart TD
     J -->|일치| K[11. 만료와 유예]
     K -->|유예도 지남| KX[EXPIRED]
     K -->|사용 가능| L[12. 릴리스 상한]
-    L -->|초과| LX[RELEASE_NOT_ENTITLED]
-    L -->|이내| M[13. 시계 워터마크]
+    L -->|이내, 또는 초과 시<br/>RELEASE_NOT_ENTITLED| M[13. 시계 워터마크]
     M -->|뒤로 감| MX[CLOCK_TAMPERED]
     M -->|정상| N[14. 하트비트 기한]
     N -->|지남| NX[HEARTBEAT_OVERDUE]
     N -->|이내| O[15. 워터마크 전진]
-    O --> OK[VALID 또는 GRACE_PERIOD]
+    O --> OK[VALID, GRACE_PERIOD<br/>또는 RELEASE_NOT_ENTITLED]
 ```
 
 순서를 이렇게 잡은 데는 이유가 있습니다. 스키마 번호를 서명보다 먼저 읽는 까닭은, 이 배포물이 읽지 못하는 형식이라면 서명을 계산해 볼 필요가 없기 때문입니다. 제품 코드는 서명 바로 뒤, 머신 대조 앞에 둡니다. 다른 제품의 토큰이라면 머신이 맞는지는 물어볼 필요도 없습니다.
 
-### 하나를 쓰고 범위를 읽습니다
+13번과 14번은 11번 결과가 사용 가능한 상태일 때만 실행합니다. 그래서 만료된 라이선스는 시계나 하트비트를 보지 않고 판정합니다. 13번은 시계가 워터마크보다 1시간 넘게 뒤에 있을 때만 거절하므로 일상적인 시각 오차는 통과합니다. 15번은 사용 가능한 판정에서만 실행하며, 워터마크를 앞으로만 옮기고 뒤로 돌리지 않습니다.
 
-이 빌드는 `SCHEMA_VERSION` 하나로만 발급하고, 검증은 `MIN_READABLE_SCHEMA_VERSION`부터 그 번호까지를 받습니다. 자기 번호만 받으면 제품이 SDK를 올리는 순간 이미 판 라이선스가 전부 거절되고, 폐쇄망에서는 다시 발급해 줄 수 없습니다.
+### 발급하고 읽는 스키마 범위
+
+이 빌드는 `MIN_READABLE_SCHEMA_VERSION`(1)부터 `SCHEMA_VERSION`(2)까지의 스키마를 읽고, 발급도 같은 범위에서 합니다. 자기 번호만 받으면 제품이 SDK를 올리는 순간 이미 판 라이선스가 전부 거절되고, 폐쇄망에서는 다시 발급해 줄 수 없습니다. 같은 범위로 발급하므로 발급 서버 하나가 서로 다른 버전의 SDK로 빌드한 제품을 함께 지원할 수 있습니다. 스키마 1에는 만료하지 않는 라이선스를 표현할 방법이 없으므로, 스키마 1 페이로드에는 `expiresAt`이 있어야 합니다.
 
 그래서 스키마를 올리는 변경은 **선택 항목을 더하거나 제약을 푸는 것까지**입니다. 필드를 없애거나, 선택 항목을 필수로 바꾸거나, 기존 값의 뜻을 다시 정하는 것은 스키마를 올리는 일이 아니라 **하한을 올리는 일**이며, 그 아래 발급된 라이선스를 전부 무효로 만드는 것과 같습니다. 그렇게 선언하는 major 릴리스에서만 합니다.
 
-스키마가 오르면 그보다 낮은 SDK를 품은 검증기는 새 토큰을 읽지 못합니다. **검증 측을 먼저 올리고, 그다음에 발급 측이 새 스키마를 쓰기 시작합니다.**
+스키마가 오르면 그보다 낮은 버전의 SDK로 빌드한 배포물은 새 토큰을 읽지 못합니다. **검증 측을 먼저 올리고, 그다음에 발급 측이 새 스키마를 쓰기 시작합니다.**
+
+1.1.0은 이 규칙의 예외입니다. 스키마 2와 minor 릴리스를 유지한 채 `heartbeatIntervalDays`와 `heartbeatToleranceDays`를 `heartbeatIntervalHours`와 `heartbeatToleranceHours`로 바꾸고, 값 0에 뜻을 부여했습니다. 일 단위 필드는 더 이상 읽지 않으므로 1.0.x 토큰은 [하트비트](#하트비트)에 적은 기본값으로 판정합니다. 업그레이드 순서는 스키마를 올릴 때와 같습니다. 1.0.x 배포물은 1.1.0 토큰의 하트비트 기간을 읽지 못하므로, 기한을 마지막 하트비트 시각으로 계산하고 `HEARTBEAT_OVERDUE`로 거절합니다. **검증하는 배포물을 모두 1.1.0으로 올린 뒤에 발급 서버를 올리세요.** 발급 서버를 올리기 전에는 서버가 돌려주는 토큰에 여전히 일 단위 필드가 담기므로, 먼저 올린 배포물은 이 토큰을 기본값으로 판정합니다. 라이선스에 정한 허용 기간과 상관없이 하트비트가 24시간 안에 한 번은 성공해야 합니다.
 
 ## 상태
 
@@ -265,22 +272,22 @@ flowchart TD
 | `GRACE_PERIOD` | 만료됐지만 유예 기간 안 | ● | 유예가 끝나기 전에 갱신 |
 | `RELEASE_NOT_ENTITLED` | 계약 상한 초과 | ● | 계약 확대, 또는 릴리스 되돌리기 |
 | `EXPIRED` | 유예 기간도 지남 | ○ | 갱신 후 재활성화 |
-| `INVALID_SIGNATURE` | 서명·알고리즘·운영 와일드카드 문제 | ○ | 이 빌드용 라이선스가 아님 — 재발급 |
+| `INVALID_SIGNATURE` | 서명·알고리즘·키·운영 와일드카드 문제 | ○ | 이 빌드용 라이선스가 아님. 재발급 |
 | `MACHINE_MISMATCH` | 다른 머신에 찍힌 라이선스 | ○ | 라이선스 서버에서 좌석 이동 |
 | `FINGERPRINT_UNAVAILABLE` | 식별자를 하나도 읽지 못함 | ○ | 호스트 식별자를 컨테이너에 마운트 |
 | `NOT_ACTIVATED` | 등록된 것이 없음 | ○ | 제품 키로 활성화 |
 | `NOT_LOADED` | 읽을 수 없는 토큰 | ○ | 저장된 기록 손상 — 재활성화 |
 | `SCHEMA_UNSUPPORTED` | 이 빌드가 읽지 못하는 스키마 | ○ | 배포물 업그레이드, 또는 재발급 |
 | `REVOKED` | 서버가 폐기함 | ○ | 공급자에게 사유 확인 |
-| `CLOCK_TAMPERED` | 시계가 워터마크보다 뒤로 감 | ○ | 시계 바로잡기 |
+| `CLOCK_TAMPERED` | 시계가 워터마크보다 1시간 넘게 뒤에 있음 | ○ | 시계 바로잡기 |
 | `INTEGRITY_FAILED` | 바이너리가 원래의 것이 아님 | ○ | 신뢰할 수 있는 빌드로 재설치 |
 | `HEARTBEAT_OVERDUE` | 필수 갱신이 오지 않음 | ○ | 연결 복구, 또는 수동 갱신 |
 | `PRODUCT_MISMATCH` | 다른 제품의 라이선스 | ○ | 올바른 라이선스 등록 |
 | `SIGNING_KEY_COMPROMISED` | 남의 손에 있는 키로 서명됐고, 이미 가진 것보다 더 요구함 | ○ | 발급자의 현재 서명 키를 품은 릴리스 받기 |
 
-`RELEASE_NOT_ENTITLED`는 일부러 사용 가능으로 두었습니다. 상한이 상태 게이트까지 닫아버리면 출입 통제가 문 앞에서 멈춥니다. 대신 기능 목록이 비어서 돌아옵니다.
+`RELEASE_NOT_ENTITLED`는 일부러 사용 가능으로 두었습니다. 상한이 상태 게이트까지 닫아버리면 출입 통제가 문 앞에서 멈춥니다. 대신 기능 목록을 비워서 돌려줍니다. 한도는 라이선스에 정한 값을 그대로 유지합니다. 항목이 없는 한도는 무제한으로 보므로, 한도까지 비우면 모든 상한이 풀리기 때문입니다.
 
-`SIGNING_KEY_COMPROMISED`는 위 판정이 스스로 내지 않는 유일한 상태입니다. 서명 개인키가 남의 손에 있는 것으로 표시된 키를 품은 배포는, 그 키로 서명된 토큰이 주는 것을 이미 가진 것과 견주어 더 요구하면 거절합니다. 견주는 기준은 그 배포가 들고 있는 기록이고, 판정 쪽에는 그 기록이 없습니다.
+`SIGNING_KEY_COMPROMISED`는 위 판정이 스스로 내지 않는 유일한 상태입니다. 서명 개인키가 유출된 것으로 표시된 키를 지닌 배포물은 그 키로 서명된 토큰이 허용하는 범위를 이미 가진 범위와 비교하고, 더 많이 요구하는 토큰을 거절합니다. 비교 기준은 애플리케이션이 보관한 기록이며, 판정에는 이 기록을 넘기지 않습니다.
 
 ## 머신 대조
 
@@ -306,6 +313,8 @@ matched ≥ 1 이고 matched ≥ ceil(|수집됨| / 2) 이면 통과
 | machine-id만 다른 곳에 복사 | 3 | 1 | 거절 |
 | 아무것도 못 읽음 | 0 | 0 | `FINGERPRINT_UNAVAILABLE` |
 
+식별자는 해시하기 전에 앞뒤 공백을 지우고 소문자로 바꿉니다. `To be filled by O.E.M.`이나 0으로만 된 UUID 같은 펌웨어 자리표시 값은 버리고, 중복은 하나로 셉니다.
+
 찍힌 개수를 기준으로 삼으면 식별자를 더 적게 읽는 환경은 통과할 길이 아예 없어집니다. MAC 주소는 쓰지 않습니다. `--mac-address` 한 줄이면 원하는 값을 넣을 수 있기 때문입니다.
 
 컨테이너에서는 Linux 식별자를 호스트에서 읽기 전용으로 마운트해야 합니다.
@@ -318,7 +327,7 @@ matched ≥ 1 이고 matched ≥ ceil(|수집됨| / 2) 이면 통과
 
 ## 서명과 키
 
-발급에는 Ed25519를 씁니다. 서명이 64바이트, 공개키가 32바이트라 손으로 들고 다니는 토큰이 짧게 유지되고, 검증 키를 빌드에 심는 부담도 없습니다. 검증할 때는 RSA-4096 PSS도 읽습니다. 개인키를 하드웨어 모듈에 두어야 하는 고객도 배포된 검증기를 건드리지 않고 지원할 수 있습니다.
+발급에는 기본으로 Ed25519를 씁니다. 서명이 64바이트, 공개키가 32바이트라 손으로 들고 다니는 토큰이 짧게 유지되고, 검증 키를 빌드에 심는 부담도 없습니다. 다른 알고리즘은 SHA-256을 쓰는 RSA-PSS(`RSA-PSS-SHA256`)입니다. 개인키를 하드웨어 모듈에 두어야 하는 고객도 배포된 검증기를 건드리지 않고 지원할 수 있습니다. RSA 키는 3072비트 이상이어야 하고, SDK가 만드는 키는 4096비트입니다.
 
 `alg`는 알고리즘을, `kid`는 키를 가리킵니다. 둘 다 서명이 덮는 범위 안에 있으므로 어느 쪽을 바꿔도 서명이 깨집니다. 단, 검사가 이 순서로 돌 때만 그렇습니다.
 
@@ -337,7 +346,7 @@ flowchart LR
 
 알고리즘 혼동 공격을 막는 것은 허용 목록 검사와 짝 확인입니다. 이 둘이 없으면 토큰이 약한 알고리즘을 선언하고 그 알고리즘으로 검증받을 수 있습니다.
 
-`kid`는 `<계열>-<연도>-<일련번호>` 형식입니다. `acps-2026-01`처럼 운영자가 원장과 대조해 읽을 수 있는 이름이며, 난수가 아닙니다. 배포물이 여러 키를 동시에 지닐 수 있어서 키 교체도 가능합니다.
+`kid`는 `<계열>-<연도>-<일련번호>` 형식입니다. `acps-2026-01`처럼 운영자가 원장과 대조해 읽을 수 있는 이름이며, 난수가 아닙니다. 계열은 영문 소문자와 숫자, 연도는 네 자리 숫자, 일련번호는 숫자이며 적힌 자릿수를 그대로 구분합니다. `-01`과 `-1`은 서로 다른 키입니다. 배포물이 여러 키를 동시에 지닐 수 있어서 키 교체도 가능합니다.
 
 ```mermaid
 sequenceDiagram
@@ -359,6 +368,12 @@ sequenceDiagram
 ```
 
 검증 키는 배포물의 바이너리에 박아 둡니다. 배포물이 키 경로를 바꿀 수 있으면 고객이 직접 만든 라이선스를 스스로 검증할 수 있게 되고, 그 순간 서명 검사는 아무것도 지키지 못합니다. 키를 바꾸려면 다시 빌드해야 합니다.
+
+## 제품 키와 릴리스 상한
+
+제품 키는 `<PREFIX>-XXXXX-XXXXX-XXXXX-XXXXX-XXXXX` 형식입니다. 접두사는 제품 계열을 나타내며 영문 대문자나 숫자 2~8자입니다. 나머지 묶음은 `I`, `L`, `O`, `U`를 뺀 문자로 만들고, 마지막 묶음은 나머지 부분의 체크섬입니다. 그래서 잘못 입력한 키는 입력하는 자리에서 바로 걸러집니다.
+
+릴리스 상한은 마디별로 비교합니다. 없는 마디는 0으로 보므로 `3.2`와 `3.2.0`은 같은 릴리스이고, `3.2.1`은 상한 `3.2`를 넘습니다. 숫자 마디는 수로 비교하므로 `3.10`이 `3.2`보다 높습니다. 그 밖의 마디는 문자열로 비교하므로 `3.2.0-rc1`이 `3.2.0`보다 높습니다. 상한이 없거나 비어 있으면 상한을 적용하지 않습니다.
 
 ## 게이트
 

@@ -61,8 +61,8 @@ func TestAKeySignsAndTheSignatureReadsBack(t *testing.T) {
 		"features":               []string{},
 		"limits":                 map[string]int{},
 		"heartbeatRequired":      false,
-		"heartbeatIntervalDays":  0,
-		"heartbeatToleranceDays": 0,
+		"heartbeatIntervalHours":  0,
+		"heartbeatToleranceHours": 0,
 	}
 
 	var signed map[string]any

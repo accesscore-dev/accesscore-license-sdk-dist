@@ -18,7 +18,7 @@ gate.checkQuota("USERS", 199)     하나 더 만들 여유가 있는가, 상한�
 
 서명, 머신 대조, 만료, 유예 기간, 릴리스 상한, 하트비트는 모두 이 세 호출 뒤에서 처리됩니다. 한곳에서, 모든 언어가 같은 방식으로 처리합니다.
 
-이름은 언어의 관습을 따릅니다. Java와 Go는 `requireFeature`, Python은 `require_feature`입니다.
+이름은 언어의 관습을 따릅니다. Java는 `requireFeature`·`checkQuota`, Go는 `RequireFeature`·`CheckQuota`, Python은 `require_feature`·`check_quota`입니다.
 
 ## 어디부터 볼 것인가
 
@@ -48,7 +48,7 @@ gate.checkQuota("USERS", 199)     하나 더 만들 여유가 있는가, 상한�
 | 언어 | 받는 곳 | 토큰 |
 | --- | --- | --- |
 | Java | GitHub Packages 레지스트리의 `dev.accesscore:license-sdk` | `read:packages` — [Java 가이드](java.md) 참고 |
-| Python | [릴리스](https://github.com/accesscore-dev/accesscore-license-sdk-dist/releases/tag/v1.0.9)에 붙은 wheel | 없음 |
+| Python | [릴리스](https://github.com/accesscore-dev/accesscore-license-sdk-dist/releases/tag/v1.1.0)에 붙은 wheel | 없음 |
 | Go | `github.com/accesscore-dev/accesscore-license-sdk-dist/packages/go` | 없음 |
 
 릴리스에는 모든 언어의 산출물이 파일로도 붙습니다. jar, wheel, Go 모듈, 그리고 SDK가 지원하지 않는 언어를 C ABI로 직접 얹을 때 쓸 미리 빌드한 코어입니다. 레지스트리에 닿을 수 없거나 닿고 싶지 않은 빌드는 이 파일을 가져가면 됩니다.
@@ -60,7 +60,7 @@ gate.checkQuota("USERS", 199)     하나 더 만들 여유가 있는가, 상한�
 | `NOT_ACTIVATED` | 아직 등록된 것이 없음 — 제품 키로 활성화 |
 | `FINGERPRINT_UNAVAILABLE` | 호스트 머신 식별자를 마운트하지 않은 컨테이너 |
 | `MACHINE_MISMATCH` | 다른 호스트의 라이선스 — 서버에서 좌석 이동 |
-| `SCHEMA_UNSUPPORTED` | 이 빌드보다 새 라이선스 — 배포물 업그레이드, 또는 재발급 |
+| `SCHEMA_UNSUPPORTED` | 이 빌드보다 새롭거나 이 빌드가 읽는 범위보다 오래된 라이선스. 배포물 업그레이드, 또는 재발급 |
 | `HEARTBEAT_OVERDUE` | 허용 기간 안에 서버와 연락이 닿지 않음 |
 | `RELEASE_NOT_ENTITLED` | 계약이 보장하는 범위를 넘겨 배포물을 업그레이드함 |
 

@@ -42,7 +42,7 @@ wrong place and tells an operator something untrue.
 | `error.license.releaseNotEntitled` | 1. running release<br>2. entitled ceiling | `RELEASE_NOT_ENTITLED` |
 | `error.license.expired` | 1. expiry instant, RFC 3339 | `EXPIRED` |
 | `error.license.schemaUnsupported` | 1. the license's schema<br>2. this build's schema | `SCHEMA_UNSUPPORTED` |
-| `error.license.heartbeatOverdue` | 1. tolerated days | `HEARTBEAT_OVERDUE` |
+| `error.license.heartbeatOverdue` | 1. the window in hours: the larger of tolerance and interval, with 24 and 1 read for zero | `HEARTBEAT_OVERDUE` |
 | `error.license.productMismatch` | 1. the license's product<br>2. this deployment's product | `PRODUCT_MISMATCH` |
 | `error.license.invalidSignature` | — | `INVALID_SIGNATURE` |
 | `error.license.fingerprintMismatch` | — | `MACHINE_MISMATCH` |
@@ -52,7 +52,11 @@ wrong place and tells an operator something untrue.
 | `error.license.revoked` | — | `REVOKED` |
 | `error.license.clockTampered` | — | `CLOCK_TAMPERED` |
 | `error.license.integrityFailed` | — | `INTEGRITY_FAILED` |
-| `error.license.signingKeyCompromised` | — | `SIGNING_KEY_COMPROMISED` |
+| `error.license.signingKeyCompromised` | — | `SIGNING_KEY_COMPROMISED`, which the host assigns |
+
+The judgement never reaches `SIGNING_KEY_COMPROMISED` on its own. The host assigns it, because
+what the token is measured against is a record the host keeps; the key is listed here so the
+message is translated when the host uses it.
 
 A denial that a number makes actionable carries it. When the payload could not be read far
 enough to fill one in, the denial falls back to `error.license.notValid` rather than rendering an
@@ -67,6 +71,11 @@ empty placeholder.
 | `error.license.quotaExceeded` | 1. quota code<br>2. the ceiling | one more would pass the ceiling |
 
 ## Reasons an activation attempt returns
+
+These carry no arguments. `interpret` returns them as an outcome rather than throwing. Four of
+them the core never produces: the host raises `activationServerNotConfigured`,
+`fingerprintUnavailable`, `notActivated`, and `alreadyRegistered` itself before it sends a
+request, from the checks only the host can make.
 
 | Key | When |
 | --- | --- |
@@ -86,6 +95,8 @@ empty placeholder.
 | `error.license.invalidSignature` | the returned token is signed by another key |
 | `error.license.notActivated` | nothing to refresh or release |
 | `error.license.alreadyRegistered` | a working license under another key is registered here |
+| `error.license.pendingApproval` | the server answered 202: an operator has to approve the activation |
+| `error.license.approvalDenied` | an operator refused the activation |
 
 The four ways a token is refused after it arrives — a wrong signing key, a license bound to
 another machine, a replayed answer, an unreadable one — are named apart on purpose. They need
@@ -94,9 +105,10 @@ one of them undiagnosable.
 
 ## Error codes
 
-Every refusal also carries a code a client branches on, and every one begins with `LICENSE_`.
-That prefix is how a client tells a license denial from a permission denial without parsing a
-message.
+Every refusal a judgement or a gate produces also carries a code a client branches on, and every
+one begins with `LICENSE_`. That prefix is how a client tells a license denial from a permission
+denial without parsing a message. An activation outcome carries no such code: it names its
+reason without the prefix, such as `SEAT_EXHAUSTED`, beside the message key.
 
 - A judgement's code is `LICENSE_` plus the status name: `LICENSE_HEARTBEAT_OVERDUE`.
 - A gate's codes are `LICENSE_FEATURE_NOT_LICENSED`, `LICENSE_FEATURE_NOT_ACTIVATED`, and

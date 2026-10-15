@@ -42,29 +42,29 @@ type Evaluation struct {
 
 // Payload is what one signed license says.
 type Payload struct {
-	SchemaVersion          int               `json:"schemaVersion"`
-	Alg                    string            `json:"alg"`
-	Kid                    string            `json:"kid"`
-	LicenseID              string            `json:"licenseId"`
-	ActivationID           string            `json:"activationId,omitempty"`
-	CustomerID             string            `json:"customerId,omitempty"`
-	Customer               string            `json:"customer,omitempty"`
-	Channel                string            `json:"channel"`
-	ProductCode            string            `json:"productCode"`
-	MaxRelease             string            `json:"maxRelease,omitempty"`
-	TierLabel              string            `json:"tierLabel,omitempty"`
-	IssuedAt               string            `json:"issuedAt"`
-	ActivatedAt            string            `json:"activatedAt,omitempty"`
-	ExpiresAt              string            `json:"expiresAt"`
-	GracePeriodDays        int               `json:"gracePeriodDays"`
-	MachineFingerprints    []string          `json:"machineFingerprints"`
-	Nonce                  string            `json:"nonce,omitempty"`
-	Features               []string          `json:"features"`
-	Limits                 map[string]int64  `json:"limits"`
-	HeartbeatRequired      bool              `json:"heartbeatRequired"`
-	HeartbeatIntervalDays  int               `json:"heartbeatIntervalDays"`
-	HeartbeatToleranceDays int               `json:"heartbeatToleranceDays"`
-	Metadata               map[string]string `json:"metadata"`
+	SchemaVersion           int               `json:"schemaVersion"`
+	Alg                     string            `json:"alg"`
+	Kid                     string            `json:"kid"`
+	LicenseID               string            `json:"licenseId"`
+	ActivationID            string            `json:"activationId,omitempty"`
+	CustomerID              string            `json:"customerId,omitempty"`
+	Customer                string            `json:"customer,omitempty"`
+	Channel                 string            `json:"channel"`
+	ProductCode             string            `json:"productCode"`
+	MaxRelease              string            `json:"maxRelease,omitempty"`
+	TierLabel               string            `json:"tierLabel,omitempty"`
+	IssuedAt                string            `json:"issuedAt"`
+	ActivatedAt             string            `json:"activatedAt,omitempty"`
+	ExpiresAt               string            `json:"expiresAt"`
+	GracePeriodDays         int               `json:"gracePeriodDays"`
+	MachineFingerprints     []string          `json:"machineFingerprints"`
+	Nonce                   string            `json:"nonce,omitempty"`
+	Features                []string          `json:"features"`
+	Limits                  map[string]int64  `json:"limits"`
+	HeartbeatRequired       bool              `json:"heartbeatRequired"`
+	HeartbeatIntervalHours  int               `json:"heartbeatIntervalHours"`
+	HeartbeatToleranceHours int               `json:"heartbeatToleranceHours"`
+	Metadata                map[string]string `json:"metadata"`
 }
 
 // LicenseDenied is what a gate returns when it refuses a request.

@@ -15,10 +15,10 @@ sequenceDiagram
 
     Note over Boot: ① at startup
     Boot->>Mgr: LicenseManager(store=…, identity=…, keys=…)
+    Boot->>Mgr: verify(now, integrity_ok=…)
     Mgr->>Store: load()
     alt something was registered
         Store-->>Mgr: the stored record
-        Mgr->>Mgr: verify(now, integrity_ok=…)
         Mgr->>Gate: the judgement is cached
         Note over Gate: features and limits are live
     else nothing yet
@@ -30,16 +30,24 @@ sequenceDiagram
 
 ## Taking it
 
+The SDK needs Python 3.9 or later.
+
 ```
-pip install https://github.com/accesscore-dev/accesscore-license-sdk-dist/releases/download/v1.0.9/accesscore_license-1.0.9-py3-none-any.whl
+pip install https://github.com/accesscore-dev/accesscore-license-sdk-dist/releases/download/v1.1.0/accesscore_license-1.1.0-py3-none-any.whl
 ```
 
-The native core travels inside the wheel, one directory per platform. A deployment whose policy
-fixes where a shared library may come from names one with `ACLIC_NATIVE_LIBRARY`; it names a
-file to load, never a key to trust.
+The native core travels inside the wheel, one directory per platform: `linux-x86_64`,
+`linux-x86_64-musl`, `linux-aarch64`, `darwin-x86_64`, `darwin-aarch64`, and `windows-x86_64`.
+On Linux the wheel picks the musl core when it finds musl's loader; `ACLIC_NATIVE_LIBC=musl` or
+`glibc` says which outright. A deployment whose policy fixes where a shared library may come
+from names one with `ACLIC_NATIVE_LIBRARY`; it names a file to load, never a key to trust.
 
-Framework extras install only what a product uses: `accesscore-license[fastapi]`,
-`[django]`, `[flask]`.
+Framework extras install only what a product uses: `fastapi`, `django`, `flask`. The wheel is
+not on PyPI, so name the extra together with the wheel's address:
+
+```
+pip install "accesscore-license[fastapi] @ https://github.com/accesscore-dev/accesscore-license-sdk-dist/releases/download/v1.1.0/accesscore_license-1.1.0-py3-none-any.whl"
+```
 
 ## What a product has to supply
 
@@ -55,6 +63,11 @@ along with the verification keys.
 | `FeatureActivationChecker` | whether an administrator switched a feature on |
 | `AuditRecorder` | where license events are recorded |
 | `ActivationServerDirectory` | where the activation server is |
+
+`FeatureActivationChecker` is given to the gate, not to the manager:
+`LicenseManager(..., gate=Gate(activation_checker=checker.is_effectively_active))`.
+`ActivationServerDirectory` is given as `directory=`; `server_url()` then prefers the address it
+returns over `configured_server_url`.
 
 ## Assembling it
 
@@ -81,64 +94,114 @@ and what to hash for an integrity check differs per language.
 
 ## Activating from your own endpoint
 
-The SDK builds the body and reads the answer; the HTTP call is yours, with your timeouts and
+The SDK builds the request and reads the answer; the HTTP call is yours, with your timeouts and
 your proxy.
 
 ```python
-@app.post("/license/activate")
+from datetime import datetime, timezone
+
+import httpx
+from fastapi.responses import JSONResponse
+
+@api.post("/license/activate")
 async def activate(form: ActivationForm):
-    request = manager.activation_request(form.product_key)
+    now = datetime.now(timezone.utc)
+    prepared = manager.activation_request(form.product_key, now)
 
-    async with httpx.AsyncClient(timeout=20.0) as client:
-        response = await client.post(
-            f"{manager.activation_server_url()}/api/activations", json=request.body
+    try:
+        async with httpx.AsyncClient(timeout=20.0) as client:
+            response = await client.post(
+                manager.server_url() + prepared["path"],
+                content=prepared["body"],
+                headers=prepared["headers"],
+            )
+        outcome = manager.interpret(   # nonce checked here
+            "ACTIVATE", response.status_code, response.text, prepared["nonce"]
         )
-        response.raise_for_status()
-        answer = response.json()
+    except httpx.TransportError:
+        outcome = manager.interpret("ACTIVATE", 0, "", prepared["nonce"], reachable=False)
 
-    record = manager.activation_response(answer, request)   # nonce checked here
-    manager.store_record(record)
-    manager.verify(datetime.now(timezone.utc), integrity_ok=check_integrity())
+    if not outcome["success"]:
+        return JSONResponse(
+            status_code=400,
+            content={"error": outcome["error"], "messageKey": outcome["messageKey"]},
+        )
 
+    result = outcome["result"]
+    manager.apply(
+        {
+            "licenseToken": result["licenseToken"],
+            "activationId": result["activationId"],
+            "activationSecret": result["activationSecret"],
+            "instanceId": settings.INSTANCE_ID,
+        },
+        now,
+        integrity_ok=check_integrity(),
+    )
     return manager.gate.state()
 ```
 
-`activation_response` refuses an answer whose nonce does not match the request, whose machine
-fingerprints do not match this host, or whose payload does not verify — so a captured reply from
-another deployment cannot be replayed here.
+`activation_request` returns `method`, `path`, `body`, `headers`, and `nonce`. Send `body` as it
+is: it is already JSON, and the signature covers those bytes.
+
+`interpret` does not raise on a refusal. It returns `success: False` with `error` and
+`messageKey`: `NONCE_MISMATCH`, `FINGERPRINT_MISMATCH`, or `INVALID_SIGNATURE` for an answer
+whose nonce, machine, or signature does not check out, so a captured reply from another
+deployment cannot be replayed here. The server's own refusals and `PENDING_APPROVAL` are listed
+in [concepts.md](concepts.md#activation-step-by-step). `apply` saves the record through your
+`Store` and judges it.
 
 ## Enforcing it
 
 ```python
+from fastapi import Depends, FastAPI
 from accesscore_license.adapters import (
     asgi_license_gate, fastapi_license_dependency, fastapi_register_exception_handler,
 )
 
-# Every request, while the deployment is unlicensed.
-app = asgi_license_gate(app, manager.gate, open_prefixes=["/license", "/activations"])
+api = FastAPI()
+
+# So a refusal anywhere becomes the shared document.
+fastapi_register_exception_handler(api)
 
 # One feature.
-@router.get("/attendance", dependencies=[Depends(
+@api.get("/attendance", dependencies=[Depends(
     fastapi_license_dependency(manager.gate, "ATTENDANCE"))])
 async def list_attendance(): ...
 
 # One ceiling, before adding.
-manager.check_quota("USERS")
+@api.post("/users")
+async def create_user(form: UserForm):
+    manager.check_quota("USERS")
+    ...
 
-# So a refusal anywhere becomes the shared document.
-fastapi_register_exception_handler(app)
+# Every request, while the deployment is unlicensed. Wrap last: the result is a plain ASGI app.
+app = asgi_license_gate(api, manager.gate, open_prefixes=["/license", "/activations"])
 ```
 
-Django takes `django_license_middleware(gate, open_prefixes)`; Flask takes
-`flask_register(app, gate, open_prefixes)`; anything WSGI takes `wsgi_license_gate`.
+Django takes `django_license_middleware(gate, open_prefixes)`. It returns a middleware factory,
+so bind it to a module-level name and list that name in `MIDDLEWARE`:
+
+```python
+# myproduct/license.py
+license_middleware = django_license_middleware(manager.gate, ["/license"])
+
+# settings.py
+MIDDLEWARE = [..., "myproduct.license.license_middleware"]
+```
+
+Flask takes `flask_register(app, gate, open_prefixes)`, which also turns a `LicenseDenied` raised
+in a view into the shared document. Anything WSGI takes `wsgi_license_gate`.
 
 Which paths stay open while unlicensed is the product's decision: a deployment has to reach its
 own license screen in order to stop being unlicensed.
 
+Where each call sits:
+
 ```mermaid
 flowchart LR
     R[an HTTP request] --> F[the ASGI/WSGI gate<br/>is the deployment licensed at all?]
-    F -->|no, and the path is gated| X403[403 + the translated message]
+    F -->|no, and the path is gated| X403[403 + errorCode, status,<br/>messageKey, arguments]
     F -->|yes, or the path is open| A[the feature dependency<br/>is this module licensed?]
     A -->|no| X403
     A -->|yes| Q[check_quota before creating<br/>is there room for one more?]
@@ -149,15 +212,17 @@ flowchart LR
 ## Turning a refusal into a response
 
 `LicenseDenied` carries `status`, `error_code`, `message_key`, `arguments`, and `http_status`,
-and `body()` renders the document every adapter writes. A product with its own response shape
-translates the key itself:
+and `body()` renders the document every adapter writes: `errorCode`, `status`, `messageKey`,
+and `arguments`, untranslated. A product with its own response shape registers its own handler
+in place of `fastapi_register_exception_handler` and translates the key itself:
 
 ```python
-from django.utils.translation import gettext
+from fastapi.responses import JSONResponse
+from accesscore_license import LicenseDenied
 
-@app.exception_handler(LicenseDenied)
-async def handle(request, denied):
-    message = gettext(denied.message_key) % tuple(denied.arguments)
+@api.exception_handler(LicenseDenied)
+async def handle(request, denied: LicenseDenied):
+    message = translate(request, denied.message_key, denied.arguments)   # your translator
     return JSONResponse(
         status_code=denied.http_status,
         content={"code": denied.error_code, "message": message},
@@ -168,42 +233,82 @@ Message keys and their argument order: [messages.md](messages.md).
 
 ## Keeping it fresh
 
-A license that requires a heartbeat needs a scheduled refresh. The SDK writes the body and reads
-the answer; the schedule and the transport are yours.
+A license that requires a heartbeat needs a scheduled refresh. The SDK writes the request and
+reads the answer; the schedule and the transport are yours.
 
 ```python
 def refresh_license() -> None:
-    if not manager.gate.state().heartbeat_required:
+    payload = manager.gate.state().get("payload") or {}
+    if not payload.get("heartbeatRequired"):
         return
 
-    request = manager.heartbeat_request()
-    response = httpx.post(
-        f"{manager.activation_server_url()}/api/heartbeats",
-        json=request.body,
-        headers={"X-Activation-Signature": request.signature},
-        timeout=20.0,
-    )
-    response.raise_for_status()
+    now = datetime.now(timezone.utc)
+    prepared = manager.heartbeat_request(now)
+    try:
+        response = httpx.post(
+            manager.server_url() + prepared["path"],
+            content=prepared["body"],
+            headers=prepared["headers"],   # X-Activation-Signature is among them
+            timeout=20.0,
+        )
+    except httpx.TransportError:
+        return   # the license stays usable until the heartbeat window passes
 
-    manager.store_record(manager.heartbeat_response(response.json()))
-    manager.verify(datetime.now(timezone.utc), integrity_ok=check_integrity())
+    outcome = manager.interpret(
+        "HEARTBEAT", response.status_code, response.text, prepared["nonce"]
+    )
+    if outcome["success"]:
+        record = dict(store.load() or {})
+        record["licenseToken"] = outcome["result"]["licenseToken"]
+        record["lastHeartbeatAt"] = now.isoformat().replace("+00:00", "Z")
+        manager.apply(record, now, integrity_ok=check_integrity())
+    elif outcome["error"] == "REVOKED":
+        manager.mark_revoked(now, integrity_ok=check_integrity())
 ```
 
-A failed heartbeat is not an error the deployment has to act on immediately — the license stays
-usable until `heartbeatToleranceDays` passes. Log it and let the next run try again.
+A heartbeat answer carries a new token but not the activation secret, so keep the stored record
+and replace only `licenseToken`. The SDK does not record when a heartbeat succeeded: the record
+you store sets `lastHeartbeatAt`, and the deadline is measured from it, or from `activatedAt`
+before the first heartbeat.
+
+A failed heartbeat is not an error the deployment has to act on immediately. The license stays
+usable until the heartbeat window passes, which is the larger of `heartbeatToleranceHours` and
+`heartbeatIntervalHours`, read as 24 and 1 when the token carries zero. Log it and let the next
+run try again.
+
+## The record and the other calls
+
+The `Store` keeps one dict per deployment. The manager reads and writes these keys:
+
+| Key | What it holds | Written by |
+| --- | --- | --- |
+| `licenseToken` | the signed token | your activation and heartbeat code, through `apply` |
+| `activationId`, `activationSecret` | the credentials a heartbeat and a release are signed with | your activation code |
+| `instanceId` | this installation's identifier | your activation code |
+| `lastHeartbeatAt` | the last successful heartbeat | your heartbeat code |
+| `verificationWatermark` | the latest instant a judgement accepted | the manager, after each judgement |
+| `revokedAt` | the revocation stamp | `mark_revoked` |
+
+Three more calls complete the lifecycle. `deactivation_request(now)` writes the request that
+hands the seat back; read its answer with `interpret("DEACTIVATE", …)`.
+`mark_revoked(now)` stores a revocation stamp and judges again. `clear_registration(now)`
+discards the record and returns the deployment to `NOT_ACTIVATED`.
 
 ## Issuing
 
 ```python
+from pathlib import Path
 from accesscore_license import LicenseIssuer
+
+private_key_pem = Path("signing-key.pem").read_bytes()
 
 issuer = LicenseIssuer()
 print("License signing key fingerprint:", issuer.fingerprint_of(private_key_pem))
 signed = issuer.sign(payload, private_key_pem)
 ```
 
-Only an issuer holds a private key. The key is wiped from the core's memory as soon as the
-signature exists.
+The private key is PKCS#8, PEM or DER, passed as `bytes`; a `str` is refused. Only an issuer
+holds a private key. The key is wiped from the core's memory as soon as the signature exists.
 
 ## Product keys and release versions
 
@@ -223,7 +328,7 @@ entitled = releases.is_within_ceiling("3.2.0", "3.2")
 - [ ] The verification key is packaged with the application, not read from a configurable path.
 - [ ] The prefixes that stay open while unlicensed reach your license screen and nothing else.
 - [ ] Every message key in [messages.md](messages.md) has a translation in every locale you ship.
-- [ ] A container mounts the host machine identifiers read-only, or activation fails with
-      `FINGERPRINT_UNAVAILABLE`.
-- [ ] The heartbeat schedule is shorter than `heartbeatIntervalDays`, so one missed run is not
-      immediately a lapse.
+- [ ] A container mounts the host machine identifiers read-only. Without them activation fails
+      with `FINGERPRINT_MISMATCH`, and a stored license is judged `FINGERPRINT_UNAVAILABLE`.
+- [ ] The heartbeat schedule is no longer than `heartbeatIntervalHours` (1 when the token
+      carries zero), so several runs can fail before the heartbeat window runs out.
